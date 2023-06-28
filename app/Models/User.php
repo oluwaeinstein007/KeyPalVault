@@ -63,6 +63,11 @@ class User extends Authenticatable
         return $this->hasMany(Booked::class, 'user_id');
     }
 
+    public function teams()
+    {
+        return $this->belongsToMany(Team::class);
+    }
+
 
 
 

@@ -1,7 +1,7 @@
 <?php
 use App\Http\Controllers\Api\v1\AuthController;
-use App\Http\Controllers\Api\v1\AdvertController;
-use App\Http\Controllers\Api\v1\ExchangeRateController;
+use App\Http\Controllers\Api\v1\VaultController;
+use App\Http\Controllers\Api\v1\TeamsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -29,14 +29,31 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::group(['middleware' => ['auth:sanctum']], function () {
-        Route::get('/valueMoney', [ExchangeRateController::class, 'valueMoney']);
-        //Advert Booking routes
-        Route::post('/bookAdvert', [AdvertController::class, 'bookAdvert']);
-        Route::get('/getBookedAdvert', [AdvertController::class, 'getBookedAdvert']);
-        Route::get('/getUserBookings', [AdvertController::class, 'getUserBookings']);
-        Route::get('/getBookingsByStatus', [AdvertController::class, 'getBookingsByStatus']);
-        Route::post('/changeBookingStatus', [AdvertController::class, 'changeBookingStatus']);
-        Route::post('/confirmPrice', [AdvertController::class, 'confirmPrice']);
+        //team routes
+        Route::post('/createTeam', [TeamsController::class, 'createTeam']);
+        Route::post('/updateTeamName', [TeamsController::class, 'updateTeamName']);
+        Route::get('/deleteTeam', [TeamsController::class, 'deleteTeam']);
+        Route::post('/addTeamMember', [TeamsController::class, 'addTeamMember']);
+        Route::post('/addTeamMemberByLeader', [TeamsController::class, 'addTeamMemberByLeader']);
+        Route::post('/removeTeamMember', [TeamsController::class, 'removeTeamMember']);
+        Route::get('/getUserTeams', [TeamsController::class, 'getUserTeams']);
+        Route::post('/makeTeamLeader', [TeamsController::class, 'makeTeamLeader']);
+        Route::post('/removeTeamLeader', [TeamsController::class, 'removeTeamLeader']);
+        Route::get('/getTeamLeaders', [TeamsController::class, 'getTeamLeaders']);
+        Route::get('/getTeamMembersWithRoles', [TeamsController::class, 'getTeamMembersWithRoles']);
+
+        //vault routes
+        //addTeam
+        Route::post('/createVault', [VaultController::class, 'createVault']);
+        Route::post('/updateVault', [VaultController::class, 'updateVault']);
+        Route::delete('/deleteVault', [VaultController::class, 'deleteVault']);
+        Route::post('/addTeam', [VaultController::class, 'addTeam']);
+        Route::post('/removeTeam', [VaultController::class, 'removeTeam']);
+        Route::get('/getTeamVaults', [VaultController::class, 'getTeamVaults']);
+        Route::post('/getVault', [VaultController::class, 'getVault']);
+
+        //socialAuth
+        Route::post('/socialAuth', [AuthController::class, 'socialAuth']);
 
         // routes accessible only to SuperAdmin
         Route::group(['middleware' => 'superadmin'], function () {

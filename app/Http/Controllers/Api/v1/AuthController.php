@@ -132,20 +132,19 @@ class AuthController extends Controller
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'email' => $request->email,
-            'profile_picture' => $request->avatar,
             'user_role_id' => 4,
             'is_social' => true,
-            'social_type' => $request->type,
+            'social_type' => $request->social_type,
         ]);
-        $this->updateInfo($user);
+
         // Create token for the new user
-        $token = $user->setConnection($this->db)->createToken('authToken')->plainTextToken;
+        $token = $user->createToken('authToken')->plainTextToken;
 
         return response()->json([
             'message' => 'success',
             'token' => $token,
             'data' => $user
-        ], 201);
+        ], 200);
     }
 
 
