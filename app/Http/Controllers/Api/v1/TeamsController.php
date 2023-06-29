@@ -9,37 +9,6 @@ use Illuminate\Http\Request;
 
 class TeamsController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    // public function createTeam(Request $request)
-    // {
-    //     // Validate the request data
-    //     $request->validate([
-    //         'name' => 'required|string|max:255',
-    //     ]);
-
-    //     // Create a new team
-    //     $team = Team::create([
-    //         'name' => $request->name,
-    //     ]);
-
-    //     //response
-    //     return response()->json([
-    //         'message' => 'Team created successfully',
-    //         'team' => $team,
-    //     ], 201);
-    // }
-
-
     public function createTeam(Request $request)
     {
         // Validate the request data
