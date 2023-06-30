@@ -54,6 +54,8 @@ Route::prefix('v1')->group(function () {
 
         //socialAuth
         Route::post('/socialAuth', [AuthController::class, 'socialAuth']);
+        //
+        Route::post('/logout', [AuthController::class, 'logout']);
 
         // routes accessible only to SuperAdmin
         Route::group(['middleware' => 'superadmin'], function () {
