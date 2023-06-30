@@ -23,6 +23,8 @@ Route::prefix('v1')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     //create Super Admin account
     Route::post('/register', [AuthController::class, 'createAccount']);
+    //socialAuth
+    Route::post('/socialAuth', [AuthController::class, 'socialAuth']);
 
     Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
         return $request->user();
@@ -41,6 +43,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/removeTeamLeader', [TeamsController::class, 'removeTeamLeader']);
         Route::get('/getTeamLeaders', [TeamsController::class, 'getTeamLeaders']);
         Route::get('/getTeamMembersWithRoles', [TeamsController::class, 'getTeamMembersWithRoles']);
+        //getUsersList
+        Route::get('/getUsersList', [TeamsController::class, 'getUsersList']);
 
         //vault routes
         //addTeam
@@ -51,9 +55,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/removeTeam', [VaultController::class, 'removeTeam']);
         Route::get('/getTeamVaults', [VaultController::class, 'getTeamVaults']);
         Route::post('/getVault', [VaultController::class, 'getVault']);
+        Route::get('/getUserVaults', [VaultController::class, 'getUserVaults']);
 
-        //socialAuth
-        Route::post('/socialAuth', [AuthController::class, 'socialAuth']);
         //
         Route::post('/logout', [AuthController::class, 'logout']);
 

@@ -96,6 +96,20 @@ class VaultController extends Controller
     }
 
 
+    //get all credentials created by user
+    public function getUserVaults(){
+        $user_id = auth()->user()->id;
+
+        $vaults = Vault::where('user_id', $user_id)->get();
+
+        //response
+        return response()->json([
+            'message' => 'User vaults retrieved successfully',
+            'data' => $vaults,
+        ], 200);
+    }
+
+
     //delete credential
     public function deleteVault(Request $request){
         // Validate the request data

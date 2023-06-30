@@ -119,6 +119,16 @@ class TeamsController extends Controller
     }
 
 
+    //get all users
+    public function getUsersList(){
+        $users = User::all();
+        return response()->json([
+            'message' => 'Users retrieved successfully',
+            'users' => $users,
+        ], 200);
+    }
+
+
     // Get all teams a user belongs to
     public function getUserTeams(Request $request)
     {
