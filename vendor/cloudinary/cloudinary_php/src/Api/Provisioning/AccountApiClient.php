@@ -11,9 +11,9 @@
 namespace Cloudinary\Api\Provisioning;
 
 use Cloudinary\Api\BaseApiClient;
+use Cloudinary\Configuration\Provisioning\ProvisioningAccountConfig;
 use Cloudinary\Configuration\Provisioning\ProvisioningConfiguration;
 use Cloudinary\Exception\ConfigurationException;
-use GuzzleHttp\Client;
 
 /**
  * Class AccountApiClient
@@ -24,23 +24,24 @@ use GuzzleHttp\Client;
  */
 class AccountApiClient extends BaseApiClient
 {
-    const PROVISIONING = 'provisioning';
-    const ACCOUNTS     = 'accounts';
+    public const PROVISIONING = 'provisioning';
+    public const ACCOUNTS     = 'accounts';
+
+    /**
+     * @var ProvisioningAccountConfig $provisioningAccount The Account API configuration.
+     */
+    protected ProvisioningAccountConfig $provisioningAccount;
 
     /**
      * AccountApiClient constructor
      *
-     * @param ProvisioningConfiguration $configuration
      */
-    public function __construct(ProvisioningConfiguration $configuration = null)
+    public function __construct(?ProvisioningConfiguration $configuration = null)
     {
         $this->init($configuration);
     }
 
-    /**
-     * @param ProvisioningConfiguration $configuration
-     */
-    public function init(ProvisioningConfiguration $configuration = null)
+    public function init(?ProvisioningConfiguration $configuration = null): void
     {
         if ($configuration === null) {
             $configuration = ProvisioningConfiguration::instance();
@@ -48,28 +49,35 @@ class AccountApiClient extends BaseApiClient
 
         if (empty($configuration->provisioningAccount->accountId)
             || empty($configuration->provisioningAccount->provisioningApiKey)
-            || empty($configuration->provisioningAccount->provisioningApiSecret)) {
+            || empty($configuration->provisioningAccount->provisioningApiSecret)
+        ) {
             throw new ConfigurationException(
                 'When providing account id, key or secret, all must be provided'
             );
         }
 
-        $this->api     = $configuration->api;
-        $this->logging = $configuration->logging;
+        $this->api                 = $configuration->api;
+        $this->provisioningAccount = $configuration->provisioningAccount;
+        $this->logging             = $configuration->logging;
 
         $this->baseUri = sprintf(
             '%s/%s/%s/%s/%s/',
             $this->api->uploadPrefix,
-            self::apiVersion(),
+            self::apiVersion($this->api->apiVersion),
             self::PROVISIONING,
             self::ACCOUNTS,
             $configuration->provisioningAccount->accountId
         );
 
+        $this->createHttpClient();
+    }
+
+    protected function buildHttpClientConfig(): array
+    {
         $clientConfig = [
             'auth'            => [
-                $configuration->provisioningAccount->provisioningApiKey,
-                $configuration->provisioningAccount->provisioningApiSecret,
+                $this->provisioningAccount->provisioningApiKey,
+                $this->provisioningAccount->provisioningApiSecret,
             ],
             'base_uri'        => $this->baseUri,
             'connect_timeout' => $this->api->connectionTimeout,
@@ -79,6 +87,8 @@ class AccountApiClient extends BaseApiClient
             'http_errors'     => false, // We handle HTTP errors by ourselves and throw corresponding exceptions
         ];
 
-        $this->httpClient = new Client($clientConfig);
+        return array_merge($clientConfig, self::httpHandlerConfig($this->psrHttpClient));
     }
+
+
 }

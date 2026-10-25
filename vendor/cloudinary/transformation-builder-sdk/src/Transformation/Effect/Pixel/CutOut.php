@@ -11,7 +11,6 @@
 namespace Cloudinary\Transformation;
 
 use Cloudinary\ArrayUtils;
-use Cloudinary\Asset\Media;
 
 /**
  * Trims pixels according to the transparency levels of a specified overlay image.
@@ -30,7 +29,7 @@ class CutOut extends SourceBasedEffectAction
     /**
      * CutOut constructor.
      *
-     * @param string|Media $source The public ID of the source.
+     * @param string|mixed $source The public ID of the source.
      */
     public function __construct($source)
     {
@@ -49,14 +48,13 @@ class CutOut extends SourceBasedEffectAction
      *
      * Note that e_cut_out comes with l_logo in the same sub-action.
      *
-     * @return array
      *
-     * @see BaseSourceContainer::getSubActionQualifiers
+     * @see BasePositionalSourceContainer::getSubActionQualifiers
      */
-    protected function getSubActionQualifiers()
+    protected function getSubActionQualifiers(): array
     {
         $sourceQualifiers     = $this->source ? $this->source->getStringQualifiers() : [];
-        $sourceTransformation = $this->source ? $this->source->getTransformation() : null;
+        $sourceTransformation = $this->source?->getTransformation();
         $positionQualifiers   = $this->position ? $this->position->getStringQualifiers() : [];
         $additionalQualifiers = $this->getStringQualifiers();
 

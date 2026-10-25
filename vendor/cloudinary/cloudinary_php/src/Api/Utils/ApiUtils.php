@@ -24,15 +24,15 @@ use Cloudinary\Utils;
  */
 class ApiUtils
 {
-    const HEADERS_OUTER_DELIMITER         = "\n";
-    const HEADERS_INNER_DELIMITER         = ':';
-    const API_PARAM_DELIMITER             = ',';
-    const CONTEXT_OUTER_DELIMITER         = '|';
-    const CONTEXT_INNER_DELIMITER         = '=';
-    const ARRAY_OF_ARRAYS_DELIMITER       = '|';
-    const ASSET_TRANSFORMATIONS_DELIMITER = '|';
-    const QUERY_STRING_INNER_DELIMITER    = '=';
-    const QUERY_STRING_OUTER_DELIMITER    = '&';
+    public const HEADERS_OUTER_DELIMITER         = "\n";
+    public const HEADERS_INNER_DELIMITER         = ':';
+    public const API_PARAM_DELIMITER             = ',';
+    public const CONTEXT_OUTER_DELIMITER         = '|';
+    public const CONTEXT_INNER_DELIMITER         = '=';
+    public const ARRAY_OF_ARRAYS_DELIMITER       = '|';
+    public const ASSET_TRANSFORMATIONS_DELIMITER = '|';
+    public const QUERY_STRING_INNER_DELIMITER    = '=';
+    public const QUERY_STRING_OUTER_DELIMITER    = '&';
 
     /**
      * Serializes a simple parameter, which can be a serializable object.
@@ -41,13 +41,13 @@ class ApiUtils
      *
      * @param string|array|mixed $parameter The parameter to serialize.
      *
-     * @return string The resulting serialized parameter.
+     * @return string|null The resulting serialized parameter.
      *
      * @internal
      *
      * @see ApiUtils::API_PARAM_DELIMITER
      */
-    public static function serializeSimpleApiParam($parameter)
+    public static function serializeSimpleApiParam(mixed $parameter): ?string
     {
         return self::serializeParameter($parameter, self::API_PARAM_DELIMITER);
     }
@@ -55,13 +55,12 @@ class ApiUtils
     /**
      * Serializes 'headers' upload API parameter.
      *
-     * @param $headers
      *
-     * @return string The resulting serialized parameter.
+     * @return string|null The resulting serialized parameter.
      *
      * @internal
      */
-    public static function serializeHeaders($headers)
+    public static function serializeHeaders($headers): ?string
     {
         return self::serializeParameter($headers, self::HEADERS_OUTER_DELIMITER, self::HEADERS_INNER_DELIMITER);
     }
@@ -69,13 +68,11 @@ class ApiUtils
     /**
      * Serializes 'context' and 'metadata' upload API parameters.
      *
-     * @param array $context
-     *
-     * @return string The resulting serialized parameter.
+     * @return ?string The resulting serialized parameter.
      *
      * @internal
      */
-    public static function serializeContext($context)
+    public static function serializeContext(mixed $context): ?string
     {
         if (is_array($context)) {
             $context = array_map('\Cloudinary\Api\ApiUtils::serializeJson', $context);
@@ -89,18 +86,18 @@ class ApiUtils
      *
      * @param mixed $jsonParam Json object
      *
-     * @return string The resulting serialized parameter.
+     * @return string|null The resulting serialized parameter.
      *
      * @internal
      */
-    public static function serializeJson($jsonParam)
+    public static function serializeJson(mixed $jsonParam): ?string
     {
         if ($jsonParam === null) {
             return null;
         }
 
         // Avoid extra double quotes around strings.
-        if (is_string($jsonParam) || (is_object($jsonParam) && method_exists($jsonParam, '__toString'))) {
+        if (is_string($jsonParam) || is_object($jsonParam) && method_exists($jsonParam, '__toString')) {
             return $jsonParam;
         }
 
@@ -110,16 +107,14 @@ class ApiUtils
     /**
      * Commonly used util for building Cloudinary API params.
      *
-     * @param      $parameter
-     * @param      $outerDelimiter
+     * @param null $outerDelimiter
      * @param null $innerDelimiter
      *
-     * @return string The resulting serialized parameter.
+     * @return string|null The resulting serialized parameter.
      *
      * @internal
-     *
      */
-    public static function serializeParameter($parameter, $outerDelimiter = null, $innerDelimiter = null)
+    public static function serializeParameter($parameter, $outerDelimiter = null, $innerDelimiter = null): ?string
     {
         if (! is_array($parameter)) {
             return $parameter === null ? null : (string)$parameter; // can be a serializable object
@@ -131,13 +126,13 @@ class ApiUtils
     /**
      * Serializes array of nested array parameters.
      *
-     * @param array $arrayOfArrays The input array.
+     * @param mixed $arrayOfArrays The input array.
      *
-     * @return string The resulting serialized parameter.
+     * @return ?string The resulting serialized parameter.
      *
      * @internal
      */
-    public static function serializeArrayOfArrays($arrayOfArrays)
+    public static function serializeArrayOfArrays(mixed $arrayOfArrays): ?string
     {
         $array = ArrayUtils::build($arrayOfArrays);
 
@@ -158,13 +153,12 @@ class ApiUtils
     /**
      * Serializes asset transformations.
      *
-     * @param array|string $transformations
      *
      * @return string The resulting serialized parameter.
      *
      * @internal
      */
-    public static function serializeAssetTransformations($transformations)
+    public static function serializeAssetTransformations(array|string|null $transformations): string
     {
         $serializedTransformations = [];
 
@@ -181,13 +175,12 @@ class ApiUtils
     /**
      * Serializes incoming transformation.
      *
-     * @param array|string $transformationParams
      *
      * @return string The resulting serialized parameter.
      *
      * @internal
      */
-    public static function serializeTransformation($transformationParams)
+    public static function serializeTransformation(array|string $transformationParams): string
     {
         return (string)ClassUtils::forceInstance($transformationParams, Transformation::class);
     }
@@ -204,7 +197,7 @@ class ApiUtils
      * @internal
      *
      */
-    public static function finalizeUploadApiParams($params)
+    public static function finalizeUploadApiParams(array $params): array
     {
         $additionalParams = [
             'timestamp' => Utils::unixTimeNow(),
@@ -220,13 +213,12 @@ class ApiUtils
     /**
      * Serializes responsive breakpoints.
      *
-     * @param array $breakpoints
      *
      * @return false|string|null
      *
      * @internal
      */
-    public static function serializeResponsiveBreakpoints($breakpoints)
+    public static function serializeResponsiveBreakpoints(?array $breakpoints): bool|string|null
     {
         if (! $breakpoints) {
             return null;
@@ -246,14 +238,20 @@ class ApiUtils
     }
 
     /**
-     * @param array $parameters
      *
-     * @return string
      *
      * @internal
      */
-    public static function serializeQueryParams($parameters = [])
+    public static function serializeQueryParams(array $parameters = [], int $signatureVersion = 2): string
     {
+        // Version 2: URL encode & characters in values to prevent parameter smuggling
+        if ($signatureVersion >= 2) {
+            $parameters = ArrayUtils::mapAssoc(
+                static fn($key, $value) => str_replace('&', '%26', $value),
+                $parameters
+            );
+        }
+
         return ArrayUtils::implodeAssoc(
             $parameters,
             self::QUERY_STRING_OUTER_DELIMITER,
@@ -267,18 +265,23 @@ class ApiUtils
      * @param array  $parameters         Parameters to sign.
      * @param string $secret             The API secret of the cloud.
      * @param string $signatureAlgorithm Signature algorithm
+     * @param int    $signatureVersion   Signature version (1 or 2)
      *
      * @return string The signature.
      *
      * @api
      */
-    public static function signParameters($parameters, $secret, $signatureAlgorithm = Utils::ALGO_SHA1)
-    {
+    public static function signParameters(
+        array $parameters,
+        string $secret,
+        string $signatureAlgorithm = Utils::ALGO_SHA1,
+        int $signatureVersion = 2
+    ): string {
         $parameters = array_map(self::class . '::serializeSimpleApiParam', $parameters);
 
         ksort($parameters);
 
-        $signatureContent = self::serializeQueryParams($parameters);
+        $signatureContent = self::serializeQueryParams($parameters, $signatureVersion);
 
         return Utils::sign($signatureContent, $secret, false, $signatureAlgorithm);
     }
@@ -286,17 +289,16 @@ class ApiUtils
     /**
      * Adds signature and api_key to $parameters.
      *
-     * @param array|null  $parameters
-     * @param CloudConfig $cloudConfig
      *
      * @internal
      */
-    public static function signRequest(&$parameters, $cloudConfig)
+    public static function signRequest(?array &$parameters, CloudConfig $cloudConfig): void
     {
         $parameters['signature'] = self::signParameters(
             $parameters,
             $cloudConfig->apiSecret,
-            $cloudConfig->signatureAlgorithm
+            $cloudConfig->signatureAlgorithm,
+            $cloudConfig->signatureVersion
         );
         $parameters['api_key']   = $cloudConfig->apiKey;
     }

@@ -23,15 +23,22 @@ class JsonUtils
     /**
      * Determines whether the input is a valid JSON string.
      *
-     * @param string $string The input string.
+     * @param mixed $string The input string.
      *
-     * @return bool
      */
-    public static function isJsonString($string)
+    public static function isJsonString(mixed $string): bool
     {
-        return (is_string($string)
-                && is_array(json_decode($string, true)) //TODO: improve performance
-                && (json_last_error() === JSON_ERROR_NONE));
+        if (! is_string($string) || ! isset($string[0]) || ($string[0] !== '{' && $string[0] !== '[')) {
+            return false;
+        }
+
+        if (PHP_VERSION_ID >= 80300) {
+            return json_validate($string);
+        }
+
+        json_decode($string, true);
+
+        return json_last_error() === JSON_ERROR_NONE;
     }
 
     /**
@@ -42,19 +49,18 @@ class JsonUtils
      * @param int   $depth   Maximum depth.
      * @param int   $options Additional options.
      *
-     * @return mixed
      *
      * @throws InvalidArgumentException
      *
      * @see json_decode
      */
-    public static function decode($json, $assoc = true, $depth = 512, $options = 0)
+    public static function decode(mixed $json, bool $assoc = true, int $depth = 512, int $options = 0): mixed
     {
         if (is_array($json)) { // Already a json array, skip decoding.
             return $json;
         }
 
-        $result = json_decode($json, $assoc, $depth, $options);
+        $result = json_decode($json, $assoc, max(1, $depth), $options);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new InvalidArgumentException('JsonException : ' . json_last_error_msg());
@@ -69,7 +75,6 @@ class JsonUtils
      * @param mixed $value   The value to encode.
      * @param int   $options Additional options.
      *
-     * @param int   $depth
      *
      * @return false|string
      *
@@ -77,9 +82,9 @@ class JsonUtils
      *
      * @see json_encode
      */
-    public static function encode($value, $options = 0, $depth = 512)
+    public static function encode(mixed $value, int $options = 0, int $depth = 512): bool|string
     {
-        $result = json_encode($value, $options, $depth);
+        $result = json_encode($value, $options, max(1, $depth));
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new InvalidArgumentException('JsonException : ' . json_last_error_msg());
@@ -93,11 +98,10 @@ class JsonUtils
      *
      * @param JsonSerializable|mixed $jsonSerializable The serializable to serialize.
      *
-     * @return mixed
      *
-     * @see \JsonSerializable::jsonSerialize
+     * @see JsonSerializable::jsonSerialize
      */
-    public static function jsonSerialize($jsonSerializable)
+    public static function jsonSerialize(mixed $jsonSerializable): mixed
     {
         if ($jsonSerializable === null) {
             return [];

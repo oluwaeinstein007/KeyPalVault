@@ -17,29 +17,29 @@ use Cloudinary\ClassUtils;
  * Defines how the video layer is applied.
  *
  * **Learn more**: <a
- * href="https://cloudinary.com/documentation/video_manipulation_and_delivery#adding_video_overlays" target="_blank">
+ * href="https://cloudinary.com/documentation/video_layers#video_overlays" target="_blank">
  * Video overlays</a>
  *
  * @api
  */
-class VideoOverlay extends BaseSourceContainer
+class VideoOverlay extends BasePositionalSourceContainer
 {
     /**
-     * @var Timeline $timeline The timeline position of the overlay.
+     * @var ?Timeline $timeline The timeline position of the overlay.
      */
-    protected $timeline;
+    protected ?Timeline $timeline;
 
     /**
      * BaseLayerContainer constructor.
      *
-     * @param BaseSource|string $source
-     * @param BasePosition|null $position
-     * @param Timeline|null     $timeline
+     * @param BaseSource|string|null $source Overlay source.
+     * @param BasePosition|null $position Overlay position.
+     * @param Timeline|null     $timeline Overlay timeline position.
      */
     public function __construct(
-        $source = null,
-        $position = null,
-        $timeline = null
+        BaseSource|string|null $source = null,
+        BasePosition|null $position = null,
+        Timeline|null $timeline = null
     ) {
         parent::__construct($source, $position);
 
@@ -51,9 +51,8 @@ class VideoOverlay extends BaseSourceContainer
      *
      * @param Timeline|null $timeline The timeline position of the overlay.
      *
-     * @return BaseSourceContainer
      */
-    public function timeline(Timeline $timeline = null)
+    public function timeline(?Timeline $timeline = null): BasePositionalSourceContainer
     {
         $this->timeline = $timeline;
 
@@ -65,7 +64,7 @@ class VideoOverlay extends BaseSourceContainer
      *
      * @return $this
      */
-    protected function concatenate()
+    protected function concatenate(): static
     {
         $this->source->setFlag(LayerFlag::splice());
 
@@ -77,7 +76,7 @@ class VideoOverlay extends BaseSourceContainer
      *
      * @return $this
      */
-    public function cutter()
+    public function cutter(): static
     {
         $this->source->setFlag(LayerFlag::cutter());
 
@@ -87,11 +86,10 @@ class VideoOverlay extends BaseSourceContainer
     /**
      * Sets the source.
      *
-     * @param BaseSource $source The source.
+     * @param BaseSource|string|null $source The source.
      *
-     * @return static
      */
-    public function source($source)
+    public function source(BaseSource|string|null $source): static
     {
         $this->source = ClassUtils::verifyInstance($source, BaseSource::class, VideoSource::class);
 
@@ -101,21 +99,17 @@ class VideoOverlay extends BaseSourceContainer
     /**
      * Sets the layer position.
      *
-     * @param Position $position The Position of the layer.
+     * @param Position|BasePosition|null $position The Position of the layer.
      *
-     * @return static
      */
-    public function position($position = null)
+    public function position(Position|BasePosition|null $position = null): static
     {
         $this->position = ClassUtils::verifyInstance($position, BasePosition::class, AbsolutePosition::class);
 
         return $this;
     }
 
-    /**
-     * @return array
-     */
-    protected function getSubActionQualifiers()
+    protected function getSubActionQualifiers(): array
     {
         $subActionQualifiers = parent::getSubActionQualifiers();
 

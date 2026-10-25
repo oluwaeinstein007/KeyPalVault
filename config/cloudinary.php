@@ -1,10 +1,8 @@
 <?php
 
 /*
- * This file is part of the Laravel Cloudinary package.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
+ * Originally published by cloudinary-labs/cloudinary-laravel. The app now uses
+ * the Cloudinary PHP SDK directly: AppServiceProvider builds it from cloud_url.
  */
 
 return [

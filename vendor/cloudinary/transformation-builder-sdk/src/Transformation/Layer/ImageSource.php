@@ -11,10 +11,10 @@
 namespace Cloudinary\Transformation;
 
 /**
- * Defines how to manipulate an image layer.
+ * Defines how to modify an image layer.
  *
  * **Learn more**: <a
- * href=https://cloudinary.com/documentation/image_transformations#image_and_text_overlays target="_blank">
+ * href=https://cloudinary.com/documentation/layers#layer_transformation_syntax target="_blank">
  * Image overlays</a>
  *
  * @api
@@ -27,7 +27,6 @@ class ImageSource extends AssetBasedSource implements ImageTransformationInterfa
     /**
      * ImageLayer constructor.
      *
-     * @param $source
      */
     public function __construct($source)
     {
@@ -37,11 +36,9 @@ class ImageSource extends AssetBasedSource implements ImageTransformationInterfa
     /**
      * Gets the transformation.
      *
-     * @return ImageTransformation
-     *
      * @internal
      */
-    public function getTransformation()
+    public function getTransformation(): CommonTransformation|ImageTransformation
     {
         if (! isset($this->transformation)) {
             $this->transformation = new ImageTransformation();
@@ -53,11 +50,10 @@ class ImageSource extends AssetBasedSource implements ImageTransformationInterfa
     /**
      * Gets the layer qualifier.
      *
-     * @return ImageSourceQualifier
      *
      * @internal
      */
-    protected function getSourceQualifier()
+    protected function getSourceQualifier(): ImageSourceQualifier|BaseSourceQualifier
     {
         if (! isset($this->qualifiers['source'])) {
             $this->qualifiers['source'] = new ImageSourceQualifier(null);

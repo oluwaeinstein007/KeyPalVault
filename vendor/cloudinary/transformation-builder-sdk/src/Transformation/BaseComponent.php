@@ -21,28 +21,30 @@ abstract class BaseComponent implements ComponentInterface
     /**
      * @var string $name The name of the component.
      */
-    protected static $name;
+    protected static string $name;
+
+    /**
+     * @var array<class-string, string> $nameCache Per-class cache for getName() results.
+     */
+    private static array $nameCache = [];
 
     /**
      * BaseComponent constructor.
      *
-     * @param mixed ...$args
      */
-    public function __construct(...$args)
+    public function __construct()
     {
-        //static::getName();
     }
 
     /**
      * Internal collector of the component class constants.
      *
-     * @param array $constantsList The constants that are set in the previous run of the function.
+     * @param array|null $constantsList The constants that are set in the previous run of the function.
      *
-     * @return array
      *
      * @internal
      */
-    protected static function getConstants(&$constantsList = null)
+    protected static function getConstants(array|null &$constantsList = null): array
     {
         if (! empty($constantsList)) {
             return $constantsList;
@@ -62,15 +64,20 @@ abstract class BaseComponent implements ComponentInterface
      *
      * @internal
      */
-    public static function getName()
+    public static function getName(): string
     {
-        $name = static::$name;
-
-        if (empty($name)) {
-            $name = StringUtils::camelCaseToSnakeCase(ClassUtils::getBaseName(static::class));
+        $class = static::class;
+        if (isset(self::$nameCache[$class])) {
+            return self::$nameCache[$class];
         }
 
-        return $name;
+        $name = static::$name ?? "";
+
+        if (empty($name)) {
+            $name = StringUtils::camelCaseToSnakeCase(ClassUtils::getBaseName($class));
+        }
+
+        return self::$nameCache[$class] = $name;
     }
 
     /**
@@ -82,7 +89,7 @@ abstract class BaseComponent implements ComponentInterface
      *
      * @internal
      */
-    public function getFullName()
+    public function getFullName(): string
     {
         return self::getName();
     }

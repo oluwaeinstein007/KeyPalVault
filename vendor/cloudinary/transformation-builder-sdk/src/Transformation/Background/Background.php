@@ -19,9 +19,9 @@ use Cloudinary\Transformation\Qualifier\Value\ColorValueTrait;
  * Defines the background color to use instead of transparent background areas or when resizing with padding.
  *
  * **Learn more**:
- * <a href="https://cloudinary.com/documentation/image_transformations#setting_background_color" target="_blank">
+ * <a href="https://cloudinary.com/documentation/effects_and_artistic_enhancements#setting_background_color" target="_blank">
  * Setting background for images</a> |
- * <a href="https://cloudinary.com/documentation/video_manipulation_and_delivery#background_color" target="_blank">
+ * <a href="https://cloudinary.com/documentation/video_effects_and_enhancements#background_color" target="_blank">
  * Setting background for videos</a>
  *
  * @api
@@ -33,9 +33,13 @@ class Background extends BaseQualifier
     use ColorValueTrait;
 
     /**
+     * @var string $name The name.
+     */
+    protected static string $name = 'background';
+
+    /**
      * Background constructor.
      *
-     * @param $color
      */
     public function __construct($color)
     {
@@ -47,10 +51,9 @@ class Background extends BaseQualifier
      *
      * @param string $color The color. Can be RGB, HEX, named color, etc.
      *
-     * @return Background
      *
      */
-    public static function color($color)
+    public static function color(string $color): Background
     {
         return new self($color);
     }
@@ -58,13 +61,12 @@ class Background extends BaseQualifier
     /**
      * Applies blurred background (Relevant only for videos).
      *
-     * @param int $intensity  The intensity of the blur.
-     * @param int $brightness The brightness of the background.
+     * @param int|null $intensity  The intensity of the blur.
+     * @param int|null $brightness The brightness of the background.
      *
-     * @return BlurredBackground
      *
      */
-    public static function blurred($intensity = null, $brightness = null)
+    public static function blurred(?int $intensity = null, ?int $brightness = null): BlurredBackground
     {
         return new BlurredBackground($intensity, $brightness);
     }
@@ -72,14 +74,27 @@ class Background extends BaseQualifier
     /**
      * Applies background color automatically.
      *
-     * @param string $autoBackground The type of the background color. See AutoBackground class.
+     * @param string|null $autoBackground The type of the background color. See AutoBackground class.
      *
-     * @return AutoBackground
      *
      * @see AutoBackground
      */
-    public static function auto($autoBackground = null)
+    public static function auto(?string $autoBackground = null): AutoBackground
     {
         return ClassUtils::forceInstance($autoBackground, AutoBackground::class);
+    }
+
+    /**
+     * Applies generative AI background.
+     *
+     * @param array|string|null $prompt           Use natural language to describe what generate in the image.
+     * @param bool|null         $ignoreForeground Whether to take foreground elements into account.
+     *
+     */
+    public static function generativeFill(
+        array|string|null $prompt = null,
+        ?bool $ignoreForeground = null
+    ): GenerativeFillBackground {
+        return new GenerativeFillBackground($prompt, $ignoreForeground);
     }
 }

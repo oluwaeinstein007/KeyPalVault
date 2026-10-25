@@ -10,6 +10,8 @@
 
 namespace Cloudinary\Transformation;
 
+use Cloudinary\TransformationUtils;
+
 /**
  * Class BackgroundRemoval
  *
@@ -24,8 +26,8 @@ namespace Cloudinary\Transformation;
  */
 class BackgroundRemoval extends EffectAction
 {
-    const FINE_EDGES = 'fineedges';
-    const HINTS      = 'hints';
+    public const FINE_EDGES = 'fineedges';
+    public const HINTS = 'hints';
 
     /**
      * RemoveBackground constructor.
@@ -34,7 +36,7 @@ class BackgroundRemoval extends EffectAction
      *                                    detail around its edges.
      * @param array     $hints            A list of foreground objects to keep.
      */
-    public function __construct($fineEdges = null, $hints = [])
+    public function __construct($fineEdges = null, array $hints = [])
     {
         parent::__construct(new ListEffectQualifier(PixelEffect::BACKGROUND_REMOVAL));
 
@@ -47,11 +49,10 @@ class BackgroundRemoval extends EffectAction
      *
      * @param bool|null $fineEdges Whether to apply fine edges mode.
      *
-     * @return BackgroundRemoval
      */
-    public function fineEdges($fineEdges = true)
+    public function fineEdges(?bool $fineEdges = true): static
     {
-        $value = $fineEdges === true ? 'y' : ($fineEdges === false ? 'n' : $fineEdges);
+        $value = TransformationUtils::boolToString($fineEdges, 'y', 'n');
 
         $this->getMainQualifier()->getPropertiesValue()->setSimpleNamedValue(self::FINE_EDGES, $value);
 
@@ -63,9 +64,8 @@ class BackgroundRemoval extends EffectAction
      *
      * @param array $foregroundObjects A list of foreground objects to keep.
      *
-     * @return BackgroundRemoval
      */
-    public function hints(...$foregroundObjects)
+    public function hints(...$foregroundObjects): static
     {
         $this->getMainQualifier()->getPropertiesValue()->setSimpleNamedValue(
             self::HINTS,

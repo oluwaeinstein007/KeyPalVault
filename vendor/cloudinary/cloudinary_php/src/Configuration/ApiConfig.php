@@ -14,6 +14,7 @@ namespace Cloudinary\Configuration;
  * Defines the global configuration when making requests to the Cloudinary API.
  *
  * @property string    $uploadPrefix    Used for changing default API host.
+ * @property string    $apiVersion      Used for changing default API version.
  * @property int|float $timeout         Describing the timeout of the request in seconds.
  *                                          Use 0 to wait indefinitely (the default value is 60 seconds).
  * @property int|float $uploadTimeout   Describing the timeout of the upload request in seconds.
@@ -24,42 +25,52 @@ namespace Cloudinary\Configuration;
  */
 class ApiConfig extends BaseConfigSection
 {
-    const CONFIG_NAME = 'api';
+    public const CONFIG_NAME = 'api';
 
-    const DEFAULT_UPLOAD_PREFIX = 'https://api.cloudinary.com';
-    const DEFAULT_CHUNK_SIZE    = 20000000; // bytes
-    const DEFAULT_TIMEOUT       = 60; // seconds
+    public const DEFAULT_UPLOAD_PREFIX = 'https://api.cloudinary.com';
+    public const DEFAULT_API_VERSION   = '1.1';
+    public const DEFAULT_CHUNK_SIZE  = 20000000; // bytes
+    public const DEFAULT_TIMEOUT    = 60; // seconds
 
     // Supported parameters
-    const UPLOAD_PREFIX      = 'upload_prefix'; // FIXME: rename it! (it is actually prefix for all API calls)
-    const API_PROXY          = 'api_proxy';
-    const CONNECTION_TIMEOUT = 'connection_timeout';
-    const TIMEOUT            = 'timeout';
-    const UPLOAD_TIMEOUT     = 'upload_timeout';
-    const CHUNK_SIZE         = 'chunk_size';
-    const CALLBACK_URL       = 'callback_url';
+    public const UPLOAD_PREFIX = 'upload_prefix'; // FIXME: rename it! (it is actually prefix for all API calls)
+    public const API_VERSION        = 'api_version';
+    public const API_PROXY          = 'api_proxy';
+    public const CONNECTION_TIMEOUT = 'connection_timeout';
+    public const TIMEOUT            = 'timeout';
+    public const UPLOAD_TIMEOUT     = 'upload_timeout';
+    public const CHUNK_SIZE         = 'chunk_size';
+    public const CALLBACK_URL       = 'callback_url';
 
     /**
      * Used for changing default API host.
      *
      * @var string
      */
-    protected $uploadPrefix;
+    protected string $uploadPrefix;
+
+    /**
+     * Used for changing default API version.
+     *
+     * @var string
+     */
+    protected string $apiVersion;
 
     /**
      * Optional. Specifies a proxy through which to make calls to the Cloudinary API.  Format: http://hostname:port.
      *
-     * @var int $apiProxy
+     * @var ?string $apiProxy
      */
-    public $apiProxy;
+    public ?string $apiProxy = null;
 
     /**
      *  Describing the number of seconds to wait while trying to connect to a server.
-     *  Use 0 to wait indefinitely (the default behavior).
+     *  When not set, the HTTP client default applies (Guzzle 8: 60 seconds, Guzzle 7 with cURL: 300 seconds).
+     *  Use 0 to disable the limit on Guzzle 8; on Guzzle 7 with cURL, 0 selects the 300 seconds default.
      *
-     * @var int|float
+     * @var int|float|null
      */
-    public $connectionTimeout;
+    public int|float|null $connectionTimeout = null;
 
     /**
      * Describing the timeout of the request in seconds.
@@ -67,7 +78,7 @@ class ApiConfig extends BaseConfigSection
      *
      * @var int|float
      */
-    protected $timeout;
+    protected int|float $timeout;
 
     /**
      * Describing the timeout of the upload request in seconds.
@@ -75,19 +86,19 @@ class ApiConfig extends BaseConfigSection
      *
      * @var int|float
      */
-    protected $uploadTimeout;
+    protected int|float $uploadTimeout;
 
     /**
      * Size of a single chunk when uploading large files.
      *
      * @var int
      */
-    protected $chunkSize;
+    protected int $chunkSize;
 
     /**
      * A public URL of your web application that has the cloudinary_cors.html file.
      *
      * @var string
      */
-    public $callbackUrl;
+    public string $callbackUrl;
 }

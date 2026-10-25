@@ -21,6 +21,7 @@ use Cloudinary\Api\Exception\RateLimited;
 use Cloudinary\ArrayUtils;
 use Cloudinary\Cloudinary;
 use Cloudinary\Configuration\ApiConfig;
+use Cloudinary\HttpClient\Psr18Handler;
 use Cloudinary\JsonUtils;
 use Cloudinary\Log\LoggerTrait;
 use Cloudinary\StringUtils;
@@ -28,13 +29,14 @@ use Cloudinary\Utils;
 use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Promise\PromiseInterface;
 use InvalidArgumentException;
 use JsonSerializable;
+use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
-use Teapot\StatusCode\Http as HttpStatusCode;
-use Teapot\StatusCode\Vendor\Twitter as TwitterStatusCode;
+use Throwable;
 
 /**
  * Class BaseApiClient
@@ -46,38 +48,34 @@ class BaseApiClient
     use LoggerTrait;
 
     /**
-     * @var string Cloudinary API version
-     */
-    const API_VERSION = '1.1';
-
-    /**
      * @var array Cloudinary API Error Classes mapping between http error codes and Cloudinary exceptions
      */
-    const CLOUDINARY_API_ERROR_CLASSES
+    protected const CLOUDINARY_API_ERROR_CLASSES
         = [
             HttpStatusCode::BAD_REQUEST           => BadRequest::class,
             HttpStatusCode::UNAUTHORIZED          => AuthorizationRequired::class,
             HttpStatusCode::FORBIDDEN             => NotAllowed::class,
             HttpStatusCode::NOT_FOUND             => NotFound::class,
             HttpStatusCode::CONFLICT              => AlreadyExists::class,
-            TwitterStatusCode::ENHANCE_YOUR_CALM  => RateLimited::class, // RFC6585::TOO_MANY_REQUESTS
+            HttpStatusCode::ENHANCE_YOUR_CALM     => RateLimited::class,
+            HttpStatusCode::TOO_MANY_REQUESTS     => RateLimited::class,
             HttpStatusCode::INTERNAL_SERVER_ERROR => GeneralError::class,
         ];
 
     /**
      * @var Client The Http client instance. Performs actual network calls.
      */
-    public $httpClient;
+    public Client $httpClient;
 
     /**
      * @var ApiConfig $api The API configuration.
      */
-    protected $api;
+    protected ApiConfig $api;
 
     /**
      * @var string Base API URI. Stored here to allow sharing it publicly (for example upload form tag)
      */
-    protected $baseUri;
+    protected string $baseUri;
 
     /**
      * Contains information about SDK user agent. Passed to the Cloudinary servers.
@@ -90,7 +88,7 @@ class BaseApiClient
      *
      * Do not change this value
      */
-    private static $userAgent = 'CloudinaryPHP/' . Cloudinary::VERSION . ' (PHP ' . PHP_VERSION . ')';
+    private static string $userAgent = 'CloudinaryPHP/' . Cloudinary::VERSION . ' (PHP ' . PHP_VERSION . ')';
 
     /**
      * Additional information to be passed with the USER_AGENT, e.g. 'CloudinaryMagento/1.0.1'.
@@ -107,16 +105,88 @@ class BaseApiClient
      *
      * @var string
      */
-    public static $userPlatform = '';
+    public static string $userPlatform = '';
+
+    /**
+     * @var ClientInterface|null Process-wide default PSR-18 client for API clients without their own.
+     */
+    private static ?ClientInterface $defaultPsrHttpClient = null;
+
+    /**
+     * @var ClientInterface|null PSR-18 client of this API client; overrides the process-wide default.
+     */
+    protected ?ClientInterface $psrHttpClient = null;
+
+    /**
+     * Sets the process-wide default PSR-18 client, or restores the built-in transport when null.
+     *
+     * @param ClientInterface|null $client The PSR-18 client.
+     *
+     * @internal Use Cloudinary::setDefaultHttpClient().
+     */
+    public static function setDefaultHttpClient(?ClientInterface $client): void
+    {
+        self::$defaultPsrHttpClient = $client;
+    }
+
+    /**
+     * Returns the Guzzle handler config for the given or default PSR-18 client, or an empty array.
+     *
+     * @param ClientInterface|null $client The PSR-18 client; the process-wide default when null.
+     *
+     * @internal
+     */
+    public static function httpHandlerConfig(?ClientInterface $client = null): array
+    {
+        $client ??= self::$defaultPsrHttpClient;
+
+        if ($client === null) {
+            return [];
+        }
+
+        return ['handler' => HandlerStack::create(new Psr18Handler($client))];
+    }
+
+    /**
+     * Sets the PSR-18 client for this API client, or falls back to the default when null.
+     *
+     * @param ClientInterface|null $client The PSR-18 client.
+     *
+     * @internal Use setHttpClient() on Cloudinary or on the API classes.
+     */
+    public function setHttpClient(?ClientInterface $client): static
+    {
+        $this->psrHttpClient = $client;
+        $this->createHttpClient();
+
+        return $this;
+    }
+
+    /**
+     * Creates the HTTP client that performs the requests.
+     */
+    protected function createHttpClient(): void
+    {
+        $this->httpClient = new Client($this->buildHttpClientConfig());
+    }
+
+    /**
+     * Builds the HTTP client configuration.
+     *
+     * @internal
+     */
+    protected function buildHttpClientConfig(): array
+    {
+        return self::httpHandlerConfig($this->psrHttpClient);
+    }
 
     /**
      * Gets base API url.
      *
-     * @return string
      *
      * @internal
      */
-    public function getBaseUri()
+    public function getBaseUri(): string
     {
         return $this->baseUri;
     }
@@ -124,14 +194,13 @@ class BaseApiClient
     /**
      * Performs an HTTP GET request with the given query parameters asynchronously.
      *
-     * @param string|array $endPoint    The API endpoint path.
+     * @param array|string $endPoint    The API endpoint path.
      * @param array        $queryParams Query parameters
      *
-     * @return PromiseInterface
      *
      * @internal
      */
-    public function getAsync($endPoint, $queryParams = [])
+    public function getAsync(array|string $endPoint, array $queryParams = []): PromiseInterface
     {
         return $this->callAsync(HttpMethod::GET, $endPoint, ['query' => Utils::buildHttpQuery($queryParams)]);
     }
@@ -139,14 +208,13 @@ class BaseApiClient
     /**
      * Performs an HTTP GET request with the given query parameters.
      *
-     * @param string|array $endPoint    The API endpoint path.
+     * @param array|string $endPoint    The API endpoint path.
      * @param array        $queryParams Query parameters.
      *
-     * @return ApiResponse
      *
      * @internal
      */
-    public function get($endPoint, $queryParams = [])
+    public function get(array|string $endPoint, array $queryParams = []): ApiResponse
     {
         return $this->getAsync($endPoint, $queryParams)->wait();
     }
@@ -154,14 +222,12 @@ class BaseApiClient
     /**
      * Performs an HTTP POST request with the given JSON object.
      *
-     * @param string|array $endPoint The API endpoint path.
-     * @param              $parameters
+     * @param array|string           $endPoint The API endpoint path.
      *
-     * @return ApiResponse
      *
      * @internal
      */
-    public function postJson($endPoint, $parameters = [])
+    public function postJson(array|string $endPoint, array|JsonSerializable $parameters = []): ApiResponse
     {
         return $this->postJsonAsync($endPoint, $parameters)->wait();
     }
@@ -169,15 +235,14 @@ class BaseApiClient
     /**
      * Performs an HTTP POST request with the given JSON object asynchronously.
      *
-     * @param string|array           $endPoint The API endpoint path.
-     * @param JsonSerializable|array $json     The json object
+     * @param array|string           $endPoint The API endpoint path.
+     * @param array|JsonSerializable $json     The json object
      *
-     * @return PromiseInterface
      *
      * @internal
      *
      */
-    public function postJsonAsync($endPoint, $json)
+    public function postJsonAsync(array|string $endPoint, array|JsonSerializable $json): PromiseInterface
     {
         return $this->callAsync(HttpMethod::POST, $endPoint, ['json' => $json]);
     }
@@ -185,16 +250,14 @@ class BaseApiClient
     /**
      * Performs an HTTP DELETE request with the given params
      *
-     * @param string|array $endPoint The API endpoint path.
+     * @param array|string $endPoint The API endpoint path.
      * @param array        $fields   Fields to send
      *
-     * @return ApiResponse
      *
-     * @throws ApiError
      *
      * @internal
      */
-    public function delete($endPoint, $fields = [])
+    public function delete(array|string $endPoint, array $fields = []): ApiResponse
     {
         return $this->callAsync(HttpMethod::DELETE, $endPoint, ['form_params' => $fields])->wait();
     }
@@ -202,14 +265,13 @@ class BaseApiClient
     /**
      * Performs an HTTP DELETE request with the given params.
      *
-     * @param string|array           $endPoint The API endpoint path.
-     * @param JsonSerializable|array $json     JSON data.
+     * @param array|string           $endPoint The API endpoint path.
+     * @param array|JsonSerializable $json     JSON data.
      *
-     * @return ApiResponse
      *
      * @internal
      */
-    public function deleteJson($endPoint, $json = [])
+    public function deleteJson(array|string $endPoint, array|JsonSerializable $json = []): ApiResponse
     {
         return $this->callAsync(HttpMethod::DELETE, $endPoint, ['json' => $json])->wait();
     }
@@ -217,14 +279,12 @@ class BaseApiClient
     /**
      * Performs an HTTP POST request with the given parameters.
      *
-     * @param string|array $endPoint The API endpoint path.
-     * @param              $parameters
+     * @param array|string $endPoint The API endpoint path.
      *
-     * @return ApiResponse
      *
      * @internal
      */
-    public function post($endPoint, $parameters = [])
+    public function post(array|string $endPoint, array $parameters = []): ApiResponse
     {
         return $this->postAsync($endPoint, $parameters)->wait();
     }
@@ -232,14 +292,12 @@ class BaseApiClient
     /**
      * Performs an HTTP POST request with the given parameters asynchronously.
      *
-     * @param string|array $endPoint The API endpoint path.
-     * @param              $options
+     * @param array|string $endPoint The API endpoint path.
      *
-     * @return PromiseInterface
      *
      * @internal
      */
-    public function postAsync($endPoint, $options = [])
+    public function postAsync(array|string $endPoint, array $options = []): PromiseInterface
     {
         return $this->callAsync(HttpMethod::POST, $endPoint, $options);
     }
@@ -247,16 +305,14 @@ class BaseApiClient
     /**
      * Performs an HTTP PUT request with the given form params
      *
-     * @param string|array $endPoint The API endpoint path.
+     * @param array|string $endPoint The API endpoint path.
      * @param array        $fields   Fields to send.
      *
-     * @return ApiResponse
      *
-     * @throws ApiError
      *
      * @internal
      */
-    public function put($endPoint, $fields)
+    public function put(array|string $endPoint, array $fields): ApiResponse
     {
         return $this->callAsync(HttpMethod::PUT, $endPoint, ['form_params' => $fields])->wait();
     }
@@ -264,12 +320,11 @@ class BaseApiClient
     /**
      * Performs an HTTP PUT request with the given form params.
      *
-     * @param string|array           $endPoint The API endpoint path.
-     * @param JsonSerializable|array $json     JSON data.
+     * @param array|string           $endPoint The API endpoint path.
+     * @param array|JsonSerializable $json     JSON data.
      *
-     * @return ApiResponse
      */
-    public function putJson($endPoint, $json)
+    public function putJson(array|string $endPoint, array|JsonSerializable $json): ApiResponse
     {
         return $this->callAsync(HttpMethod::PUT, $endPoint, ['json' => $json])->wait();
     }
@@ -277,13 +332,15 @@ class BaseApiClient
     /**
      * Gets the API version string from the version.
      *
+     * @param string $apiVersion The API version in the form Major.minor (for example: 1.1).
+     *
      * @return string API version string
      *
      * @internal
      */
-    public static function apiVersion()
+    public static function apiVersion(string $apiVersion = ApiConfig::DEFAULT_API_VERSION): string
     {
-        return 'v' . str_replace('.', '_', self::API_VERSION);
+        return 'v' . str_replace('.', '_', $apiVersion);
     }
 
     /**
@@ -291,11 +348,11 @@ class BaseApiClient
      *
      * @param array|string $endPoint The API endpoint path.
      *
-     * @return string resulting URL path
+     * @return array|string resulting URL path
      *
      * @internal
      */
-    protected static function finalizeEndPoint($endPoint)
+    protected static function finalizeEndPoint(array|string $endPoint): array|string
     {
         if (is_array($endPoint)) {
             $endPoint = ArrayUtils::implodeUrl($endPoint);
@@ -308,19 +365,20 @@ class BaseApiClient
      * Performs an HTTP call asynchronously
      *
      * @param string       $method   HTTP method
-     * @param string|array $endPoint The API endpoint path.
+     * @param array|string $endPoint The API endpoint path.
      * @param array        $options  Array containing request body and additional options passed to the HTTP Client
      *
-     * @return PromiseInterface
      *
      * @internal
      */
-    protected function callAsync($method, $endPoint, $options)
+    protected function callAsync(string $method, array|string $endPoint, array $options): PromiseInterface
     {
-        $endPoint = self::finalizeEndPoint($endPoint);
-        $options['headers'] = ArrayUtils::mergeNonEmpty(
-            ArrayUtils::get($options, 'headers', []),
-            ArrayUtils::get($options, 'extra_headers', [])
+        $endPoint           = self::finalizeEndPoint($endPoint);
+        $options['headers'] = self::normalizeHeaders(
+            ArrayUtils::mergeNonEmpty(
+                ArrayUtils::get($options, 'headers', []),
+                ArrayUtils::get($options, 'extra_headers', [])
+            )
         );
         $this->getLogger()->debug("Making async $method request", ['method' => $method, 'endPoint' => $endPoint]);
 
@@ -347,7 +405,7 @@ class BaseApiClient
                         return Create::rejectionFor($e);
                     }
                 },
-                function (Exception $error) {
+                function (Throwable $error) {
                     $this->getLogger()->critical(
                         'Async request failed',
                         [
@@ -365,15 +423,36 @@ class BaseApiClient
     }
 
     /**
+     * Keeps named headers only and casts their values to strings.
+     *
+     * @param array $headers The headers to normalize.
+     *
+     * @internal
+     */
+    private static function normalizeHeaders(array $headers): array
+    {
+        $normalized = [];
+
+        foreach ($headers as $name => $value) {
+            if (! is_string($name)) {
+                continue;
+            }
+
+            $normalized[$name] = is_array($value) ? array_map('strval', $value) : (string)$value;
+        }
+
+        return $normalized;
+    }
+
+    /**
      * Provides the {@see ApiClient::$userAgent} string that is passed to the Cloudinary servers.
      *
      * Prepends {@see ApiClient::$userPlatform} if it is defined.
      *
-     * @return string
      *
      * @internal
      */
-    protected static function userAgent()
+    protected static function userAgent(): string
     {
         if (empty(self::$userPlatform)) {
             return self::$userAgent;
@@ -387,13 +466,12 @@ class BaseApiClient
      *
      * @param ResponseInterface $response Response from HTTP request to the Cloudinary server
      *
-     * @return ApiResponse
      *
      * @throws ApiError
      *
      * @internal
      */
-    private function handleApiResponse($response)
+    private function handleApiResponse(ResponseInterface $response): ApiResponse
     {
         $statusCode = $response->getStatusCode();
 
@@ -433,16 +511,15 @@ class BaseApiClient
      *
      * @param ResponseInterface $response Response from HTTP request to Cloudinary server
      *
-     * @return mixed
      *
      * @throws GeneralError
      *
      * @internal
      */
-    private function parseJsonResponse($response)
+    private function parseJsonResponse(ResponseInterface $response): mixed
     {
         try {
-            $responseJson = JsonUtils::decode($response->getBody(), true);
+            $responseJson = JsonUtils::decode($response->getBody());
         } catch (InvalidArgumentException $iae) {
             $message = sprintf(
                 'Error parsing server response (%s) - %s. Got - %s',

@@ -10,6 +10,8 @@
 
 namespace Cloudinary\Transformation;
 
+use Cloudinary\Transformation\Argument\ColorValue;
+use Cloudinary\Transformation\Expression\Expression;
 use InvalidArgumentException;
 
 /**
@@ -25,15 +27,14 @@ class FillPad extends Fill
 
     /**
      * FillPad constructor.
-     *
-     * @param      $cropMode
-     * @param null $width
-     * @param null $height
-     * @param null $gravity
-     * @param null $background
      */
-    public function __construct($cropMode, $width = null, $height = null, $gravity = null, $background = null)
-    {
+    public function __construct(
+        string|CropMode $cropMode,
+        mixed $width = null,
+        mixed $height = null,
+        mixed $gravity = null,
+        Background|ColorValue|string|null $background = null
+    ) {
         if ($gravity === null) {
             $gravity = Gravity::auto();
         }
@@ -46,11 +47,10 @@ class FillPad extends Fill
     /**
      * Sets the gravity to use when using the FILL_PAD crop mode.
      *
-     * @param $autoGravity
      *
      * @return $this
      */
-    public function gravity($autoGravity)
+    public function gravity(mixed $autoGravity): static
     {
         if (! $autoGravity instanceof AutoGravity) {
             throw new InvalidArgumentException('FillPad only supports Auto Gravity');
@@ -64,11 +64,9 @@ class FillPad extends Fill
     /**
      * @internal
      *
-     * @param $value
      *
-     * @return static
      */
-    public function setOffsetValue($value)
+    public function setOffsetValue($value): static
     {
         if (! isset($this->qualifiers[Offset::getName()])) {
             $this->addQualifier(new Offset());

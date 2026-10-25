@@ -36,8 +36,6 @@ trait AssetFinalizerTrait
      *
      * @param null   $subDomainPrefix
      * @param null   $subDomainSuffix
-     * @param string $subDomain
-     * @param string $domain
      *
      * @return string Resulting host name
      * @internal
@@ -45,9 +43,9 @@ trait AssetFinalizerTrait
     private static function buildHostName(
         $subDomainPrefix = null,
         $subDomainSuffix = null,
-        $subDomain = UrlConfig::DEFAULT_SUB_DOMAIN,
-        $domain = UrlConfig::DEFAULT_DOMAIN
-    ) {
+        ?string $subDomain = UrlConfig::DEFAULT_SUB_DOMAIN,
+        ?string $domain = UrlConfig::DEFAULT_DOMAIN
+    ): string {
         return implode(
             '.',
             array_filter(
@@ -66,9 +64,9 @@ trait AssetFinalizerTrait
      *
      * @return int between 1 and 5
      */
-    private static function domainShard($source)
+    private static function domainShard(string $source): int
     {
-        return (((crc32($source) % 5) + 5) % 5 + 1);
+        return (crc32($source) % 5 + 5) % 5 + 1;
     }
 
     /**
@@ -85,9 +83,8 @@ trait AssetFinalizerTrait
      *      If cdn_domain is true uses a[1-5].cname for http.
      *      For https, uses the same naming scheme as 1 for shared distribution and as 2 for private distribution.
      *
-     * @return mixed
      */
-    protected function finalizeDistribution()
+    protected function finalizeDistribution(): string
     {
         $useSharedHost = ! $this->urlConfig->privateCdn;
 
@@ -150,10 +147,9 @@ trait AssetFinalizerTrait
      *
      * @see https://cloudinary.com/documentation/advanced_url_delivery_options#seo_friendly_media_asset_urls
      *
-     * @return mixed
      * @throws UnexpectedValueException
      */
-    protected function finalizeAssetType()
+    protected function finalizeAssetType(): mixed
     {
         if (! empty($this->asset->suffix)) {
             $suffixSupportedDeliveryTypes = static::getSuffixSupportedDeliveryTypes();
@@ -176,7 +172,7 @@ trait AssetFinalizerTrait
 
             $finalAssetType = $suffixSupportedDeliveryTypes[$this->asset->assetType][$this->asset->deliveryType];
         } else {
-            $finalAssetType = implode('/', [$this->asset->assetType, $this->asset->deliveryType]);
+            $finalAssetType = ArrayUtils::implodeUrl([$this->asset->assetType, $this->asset->deliveryType]);
         }
 
         return $finalAssetType;
@@ -185,13 +181,12 @@ trait AssetFinalizerTrait
     /**
      * Finalizes asset source.
      *
-     * @return mixed
      */
-    protected function finalizeSource()
+    protected function finalizeSource(): string
     {
         $source = $this->asset->publicId(true);
 
-        if (! preg_match('/^https?:\//i', $source)) {
+        if (stripos($source, 'http:/') !== 0 && stripos($source, 'https:/') !== 0) {
             $source = rawurldecode($source);
         }
 
@@ -210,18 +205,21 @@ trait AssetFinalizerTrait
     /**
      * Finalizes version part of the asset URL.
      *
-     * @return mixed
      */
-    protected function finalizeVersion()
+    protected function finalizeVersion(): ?string
     {
         $version = $this->asset->version;
 
         if (empty($version) && $this->urlConfig->forceVersion
             && ! empty($this->asset->location)
-            && ! preg_match("/^https?:\//", $this->asset->publicId())
-            && ! preg_match('/^v\d+/', $this->asset->publicId())
         ) {
-            $version = '1';
+            $publicId = $this->asset->publicId();
+            if (strncmp($publicId, 'http:/', 6) !== 0
+                && strncmp($publicId, 'https:/', 7) !== 0
+                && ! preg_match('/^v\d+/', $publicId)
+            ) {
+                $version = '1';
+            }
         }
 
         return $version ? 'v' . $version : null;
@@ -232,10 +230,9 @@ trait AssetFinalizerTrait
      *
      * @see https://cloudinary.com/documentation/advanced_url_delivery_options#generating_delivery_url_signatures
      *
-     * @return string
      * @throws ConfigurationException
      */
-    protected function finalizeSimpleSignature()
+    protected function finalizeSimpleSignature(): string
     {
         if (! $this->urlConfig->signUrl || $this->authToken->isEnabled()) {
             return '';
@@ -264,9 +261,8 @@ trait AssetFinalizerTrait
     /**
      * Check if passed signatureAlgorithm is supported otherwise return SHA1.
      *
-     * @return string
      */
-    protected function getSignatureAlgorithm()
+    protected function getSignatureAlgorithm(): string
     {
         if ($this->urlConfig->longUrlSignature) {
             return Utils::ALGO_SHA256;
@@ -284,9 +280,9 @@ trait AssetFinalizerTrait
      *
      * @param string $urlStr The URL to finalize.
      *
-     * @return string|UriInterface The resulting URL.
+     * @return UriInterface The resulting URL.
      */
-    protected function finalizeUrl($urlStr)
+    protected function finalizeUrl(string $urlStr): UriInterface
     {
         $urlParts = parse_url($urlStr);
 
@@ -303,7 +299,7 @@ trait AssetFinalizerTrait
      *
      * @return array resulting URL parts
      */
-    protected function finalizeUrlWithAuthToken($urlParts)
+    protected function finalizeUrlWithAuthToken(array $urlParts): array
     {
         if (! $this->urlConfig->signUrl || ! $this->authToken->isEnabled()) {
             return $urlParts;
@@ -329,14 +325,14 @@ trait AssetFinalizerTrait
      *
      * @return array resulting URL
      */
-    protected function finalizeUrlWithAnalytics($urlParts)
+    protected function finalizeUrlWithAnalytics(array $urlParts): array
     {
         if (! $this->urlConfig->analytics) {
             return $urlParts;
         }
 
         // Disable analytics for public IDs containing query params.
-        if (! empty($urlParts['query']) || StringUtils::contains($this->asset->publicId(), "?")) {
+        if (! empty($urlParts['query']) || StringUtils::contains($this->asset->publicId(), '?')) {
             return $urlParts;
         }
 

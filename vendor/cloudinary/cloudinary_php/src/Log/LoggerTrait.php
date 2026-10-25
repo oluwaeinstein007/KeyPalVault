@@ -16,7 +16,7 @@ use Psr\Log\LoggerInterface;
 /**
  * LoggerTrait adds logging capabilities to a class
  *
- * By default it writes to the standard error log configured for PHP
+ * By default, it writes to the standard error log configured for PHP
  *
  * Example usage:
  *   class Foo
@@ -142,22 +142,13 @@ use Psr\Log\LoggerInterface;
  */
 trait LoggerTrait
 {
-    /**
-     * @var LoggingConfig $logging
-     */
-    public $logging;
+    public LoggingConfig $logging;
 
-    /**
-     * @var LoggerInterface $logger
-     */
-    private $logger;
+    private LoggerInterface $logger;
 
-    /**
-     * @return LoggerInterface
-     */
-    protected function getLogger()
+    protected function getLogger(): LoggerDecorator|LoggerInterface
     {
-        if ($this->logger === null) {
+        if (!isset($this->logger)) {
             $this->logger = new LoggerDecorator($this->logging);
         }
 

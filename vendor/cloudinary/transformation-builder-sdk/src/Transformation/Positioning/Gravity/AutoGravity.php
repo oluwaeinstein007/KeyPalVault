@@ -14,31 +14,25 @@ namespace Cloudinary\Transformation;
  * Automatically identifies the most interesting regions to include when resizing.
  *
  * **Learn more**:
- * <a href="https://cloudinary.com/documentation/image_transformations#automatic_cropping_g_auto" target="_blank">
+ * <a href="https://cloudinary.com/documentation/resizing_and_cropping#automatic_cropping_g_auto" target="_blank">
  * Automatic gravity for images</a> |
- * <a href="https://cloudinary.com/documentation/video_manipulation_and_delivery#automatic_cropping" target="_blank">
+ * <a href="https://cloudinary.com/documentation/video_resizing_and_cropping#automatic_gravity_for_crops_g_auto" target="_blank">
  * Automatic gravity for videos</a>
  *
  * @api
  */
 class AutoGravity extends GravityQualifier
 {
-    const AUTO    = 'auto';
-    const CLASSIC = 'classic';
-    const SUBJECT = 'subject';
+    public const AUTO = 'auto';
+    public const CLASSIC = 'classic';
+    public const SUBJECT = 'subject';
 
-    /**
-     * @return string
-     */
-    public static function classic()
+    public static function classic(): string
     {
         return self::CLASSIC;
     }
 
-    /**
-     * @return string
-     */
-    public static function subject()
+    public static function subject(): string
     {
         return self::SUBJECT;
     }
@@ -46,9 +40,8 @@ class AutoGravity extends GravityQualifier
     /**
      * @param mixed $gravity The gravity to use.
      *
-     * @return string
      */
-    public static function object($gravity)
+    public static function object(mixed $gravity): AutoGravityObject
     {
         return new AutoGravityObject($gravity);
     }
@@ -58,9 +51,8 @@ class AutoGravity extends GravityQualifier
      *
      * @param array|AutoGravity|ObjectGravity|string|mixed $fallbackGravities The fallback gravities.
      *
-     * @return AutoGravity
      */
-    public function autoFocus(...$fallbackGravities)
+    public function autoFocus(...$fallbackGravities): AutoGravity
     {
         return $this->add(...$fallbackGravities);
     }

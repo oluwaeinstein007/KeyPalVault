@@ -1,3 +1,114 @@
+3.3.0 / 2026-10-19
+==================
+
+New functionality and features
+------------------------------
+
+  * Add support for custom PSR-18 HTTP clients
+
+3.2.0 / 2026-10-19
+==================
+
+New functionality and features
+------------------------------
+
+  * Add support for `Guzzle 8`
+
+Other Changes
+-------------
+
+  * Fix unsigned upload when API key and secret are not configured
+  * Fix custom HTTP headers with non-string values
+
+3.1.3 / 2026-04-26
+==================
+
+  * Performance improvements
+  * Speed up URL/tag generation via `Configuration` clone fast-path
+
+3.1.2 / 2025-09-21
+==================
+
+  * Fix nonexistent file error handling
+
+3.1.1 / 2025-06-17
+==================
+
+  * Add support for `429 Too Many Requests` HTTP status code
+  * Fix API parameters signature
+
+3.1.0 / 2025-01-14
+==================
+
+New functionality and features
+------------------------------
+
+  * Add PHP type declarations
+    * ⚠ While unlikely, this change could potentially alter behavior in certain cases and may require minor adjustments
+      to your code. Please report any unexpected issues encountered.
+  * Add support for `deleteAssetsByAssetIds` Admin API
+  * Add support for `restoreByAssetIds` Admin API
+  * Add support for `allowDynamicListValues` parameter in `MetadataField`
+
+3.0.0 / 2025-01-06
+==================
+
+⚠ BREAKING CHANGES
+------------------------------
+
+  * Drop support for PHP `5.6` and `7.x`
+
+New functionality and features
+------------------------------
+
+  * Add support for `config` Admin API
+  * Add support for `defaultDisabled` parameter in `MetadataField`
+  * Add support for `renameFolder` Admin API
+
+Other Changes
+-------------
+
+  * Improve doc strings
+
+2.14.0 / 2024-05-07
+==================
+
+New functionality and features
+------------------------------
+
+  * Add support for `restrictions` parameter in `MetadataField`
+
+2.13.1 / 2024-03-21
+==================
+
+  * Fix `analyze` API endpoint
+
+2.13.0 / 2024-03-12
+==================
+
+New functionality and features
+------------------------------
+
+  * Add support for `analyze` API
+
+2.12.0 / 2023-12-03
+==================
+
+New functionality and features
+------------------------------
+
+  * Add support for access keys management in Account Provisioning API
+  * Add support for `visualSearch` Admin API
+  * Add support for `fields` parameter in Search and Admin APIs
+  * Add support for Search URL
+  * Add support for `useFetchFormat` in `VideoTag`
+  * Add support for `on_success` upload parameter
+
+Other Changes
+-------------
+
+  * Remove redundant `teapot/status-code` dependency
+
 2.11.0 / 2023-05-23
 ==================
 

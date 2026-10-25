@@ -18,22 +18,22 @@ use Cloudinary\Transformation\Qualifier\BaseQualifier;
  */
 abstract class BaseOffsetQualifier extends BaseQualifier
 {
-    const RANGE_VALUE_RE = /** @lang PhpRegExp */
+    protected const RANGE_VALUE_RE = /** @lang PhpRegExp */
         '/^(?P<value>(\d+\.)?\d+)(?P<modifier>[%pP])?$/';
 
     /**
      * @var bool Indicates whether to allow value 'auto'.
      */
-    protected static $allowAuto = false;
+    protected static bool $allowAuto = false;
 
     /**
      * Normalizes a range value.
      *
      * @param string|float|mixed $value The value to normalize.
      *
-     * @return string|mixed The normalized value.
+     * @return string|null The normalized value.
      */
-    private static function normRangeValue($value)
+    private static function normRangeValue(mixed $value): ?string
     {
         if ($value === null) {
             return null;
@@ -41,7 +41,7 @@ abstract class BaseOffsetQualifier extends BaseQualifier
 
         // Ensure that trailing decimal(.0) part is not cropped when float is provided
         // e.g. float 1.0 should be returned as "1.0" and not "1" as it happens by default
-        if (is_float($value) && $value - (int)$value === 0) {
+        if (is_float($value) && $value - (int)$value == 0) {
             $value = sprintf('%.1f', $value);
         }
 
@@ -70,7 +70,7 @@ abstract class BaseOffsetQualifier extends BaseQualifier
      *
      * @noinspection TypeUnsafeComparisonInspection
      */
-    private static function normAutoRangeValue($value)
+    private static function normAutoRangeValue(mixed $value): mixed
     {
         if ($value == 'auto') {
             return $value;

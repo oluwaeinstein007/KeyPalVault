@@ -17,18 +17,16 @@ use Cloudinary\ClassUtils;
  */
 class EffectAction extends Action
 {
-    const MAIN_QUALIFIER = EffectQualifier::class;
+    protected const MAIN_QUALIFIER = EffectQualifier::class;
 
     use EffectActionTrait;
 
     /**
      * EffectAction constructor.
      *
-     * @param       $effect
-     * @param mixed ...$args
      */
     public function __construct($effect, ...$args)
     {
-        parent::__construct(ClassUtils::verifyInstance($effect, EffectQualifier::class, null, ...$args));
+        parent::__construct(ClassUtils::verifyInstance($effect, static::MAIN_QUALIFIER, null, ...$args));
     }
 }

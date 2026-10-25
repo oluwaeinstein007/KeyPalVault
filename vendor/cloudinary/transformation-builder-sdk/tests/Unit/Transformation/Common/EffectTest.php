@@ -226,6 +226,21 @@ final class EffectTest extends TransformationTestCase
         );
 
         self::assertEquals(
+            'e_blur_region:2000,h_40,w_30,x_10,y_20',
+            (string)Effect::blurRegion(2000, 10, 20, 30, 40)
+        );
+
+        self::assertEquals(
+            'e_blur_region:2000,h_40,w_30,x_10,y_20',
+            (string)Effect::blurRegion()->strength(2000)->x(10)->y(20)->width(30)->height(40)
+        );
+
+        self::assertEquals(
+            'e_blur_region:$var1,h_$var5,w_$var4,x_$var2,y_$var3',
+            (string)Effect::blurRegion()->strength('$var1')->x('$var2')->y('$var3')->width('$var4')->height('$var5')
+        );
+
+        self::assertEquals(
             'e_blur_faces:17',
             (string)Effect::blur(17)->region(Region::faces())
         );
@@ -233,6 +248,16 @@ final class EffectTest extends TransformationTestCase
         self::assertEquals(
             'e_blur_faces:17',
             (string)Effect::blur()->strength(17)->region(Region::faces())
+        );
+
+        self::assertEquals(
+            'e_blur_faces:17',
+            (string)Effect::blurFaces(17)
+        );
+
+        self::assertEquals(
+            'e_blur_faces:17',
+            (string)Effect::blurFaces()->strength(17)
         );
 
         self::assertEquals(
@@ -299,6 +324,11 @@ final class EffectTest extends TransformationTestCase
         self::assertEquals(
             'e_background_removal:fineedges_n',
             (string)Effect::backgroundRemoval()->fineEdges(false)
+        );
+
+        self::assertEquals(
+            'e_background_removal:fineedges_y;hints_cat',
+            (string)Effect::backgroundRemoval()->fineEdges()->hints(ForegroundObject::cat())
         );
 
         self::assertEquals(
@@ -386,7 +416,7 @@ final class EffectTest extends TransformationTestCase
 
         self::assertEquals(
             'e_gradient_fade:symmetric',
-            (string)Effect::gradientFade(GradientFade::symmetric())
+            (string)Effect::gradientFade(null, GradientFade::symmetric())
         );
 
         self::assertEquals(
@@ -472,7 +502,7 @@ final class EffectTest extends TransformationTestCase
      *
      * @return array
      */
-    public function artisticFilterDataProvider()
+    public function artisticFilterDataProvider(): array
     {
         return [
             ['al_dente', 'alDente'],
@@ -507,7 +537,7 @@ final class EffectTest extends TransformationTestCase
      * @param string $filter
      * @param string $method
      */
-    public function testArtisticFilter($filter, $method)
+    public function testArtisticFilter(string $filter, string $method)
     {
         self::assertEquals(
             'e_art:' . $filter,
@@ -710,5 +740,21 @@ final class EffectTest extends TransformationTestCase
             'e_theme:color_ff9900',
             (string)Effect::theme(Color::rgb('ff9900'))
         );
+    }
+
+    public function testEffectQualifierToStringIsIdempotent()
+    {
+        // Regression test for mutation bug in QualifierMultiValue::__toString().
+        // EffectName arguments were appended to $this->argumentOrder on every call,
+        // causing incorrect sort order and growing memory on repeated serializations.
+        $effect = Effect::sepia($this->effectLevel);
+
+        $first  = (string)$effect;
+        $second = (string)$effect;
+        $third  = (string)$effect;
+
+        self::assertSame($first, $second, 'Effect serialized twice must produce identical output');
+        self::assertSame($first, $third, 'Effect serialized three times must produce identical output');
+        self::assertSame("e_sepia:$this->effectLevel", $first);
     }
 }

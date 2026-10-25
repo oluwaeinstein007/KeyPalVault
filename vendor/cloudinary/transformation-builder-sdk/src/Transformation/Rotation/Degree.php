@@ -17,32 +17,31 @@ use Cloudinary\Transformation\RotationDegreeInterface;
  * Defines how to rotate an image.
  *
  * **Learn more**: <a
- * href="https://cloudinary.com/documentation/image_transformations#rotating_images" target="_blank">
+ * href="https://cloudinary.com/documentation/effects_and_artistic_enhancements#rotating_images" target="_blank">
  * Rotate an image</a>
  *
  * @api
  */
 class Degree extends ExpressionQualifierMultiValue implements RotationDegreeInterface
 {
-    const VALUE_DELIMITER = '.';
+    protected const VALUE_DELIMITER = '.';
 
     use AngleTrait;
 
-    const DEG_90  = '90';
-    const DEG_180 = '180';
-    const DEG_270 = '270';
+    public const DEG_90  = '90';
+    public const DEG_180 = '180';
+    public const DEG_270 = '270';
 
     /**
      * Creates the instance.
      *
      * @param int|array $degree Given degrees or mode.
      *
-     * @return Degree
      *
      * @internal
      */
-    public static function createWithDegree(...$degree)
+    public static function createWithDegree(...$degree): static
     {
-        return new self(...$degree);
+        return new static(...$degree);
     }
 }
