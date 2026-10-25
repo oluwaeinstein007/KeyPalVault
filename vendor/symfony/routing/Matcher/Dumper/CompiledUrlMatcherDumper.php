@@ -37,17 +37,17 @@ class CompiledUrlMatcherDumper extends MatcherDumper
     public function dump(array $options = []): string
     {
         return <<<EOF
-<?php
+            <?php
 
-/**
- * This file has been auto-generated
- * by the Symfony Routing Component.
- */
+            /**
+             * This file has been auto-generated
+             * by the Symfony Routing Component.
+             */
 
-return [
-{$this->generateCompiledRoutes()}];
+            return [
+            {$this->generateCompiledRoutes()}];
 
-EOF;
+            EOF;
     }
 
     /**
@@ -115,12 +115,12 @@ EOF;
             }
 
             $checkConditionCode = <<<EOF
-    static function (\$condition, \$context, \$request, \$params) { // \$checkCondition
-        switch (\$condition) {
-{$this->indent(implode("\n", $conditions), 3)}
-        }
-    }
-EOF;
+                    static function (\$condition, \$context, \$request, \$params) { // \$checkCondition
+                        switch (\$condition) {
+                {$this->indent(implode("\n", $conditions), 3)}
+                        }
+                    }
+                EOF;
             $compiledRoutes[4] = $forDump ? $checkConditionCode.",\n" : eval('return '.$checkConditionCode.';');
         } else {
             $compiledRoutes[4] = $forDump ? "    null, // \$checkCondition\n" : null;
@@ -137,23 +137,21 @@ EOF;
 
         $code .= '[ // $staticRoutes'."\n";
         foreach ($staticRoutes as $path => $routes) {
-            $code .= sprintf("    %s => [\n", self::export($path));
+            $code .= \sprintf("    %s => [\n", self::export($path));
             foreach ($routes as $route) {
-                $r = array_map([__CLASS__, 'export'], $route);
-                $code .= sprintf("        [%s, %s, %s, %s, %s, %s, %s],\n", $r[0], $r[1], $r[2], $r[3], $r[4], $r[5], $r[6]);
+                $code .= vsprintf("        [%s, %s, %s, %s, %s, %s, %s],\n", array_map([__CLASS__, 'export'], $route));
             }
             $code .= "    ],\n";
         }
         $code .= "],\n";
 
-        $code .= sprintf("[ // \$regexpList%s\n],\n", $regexpCode);
+        $code .= \sprintf("[ // \$regexpList%s\n],\n", $regexpCode);
 
         $code .= '[ // $dynamicRoutes'."\n";
         foreach ($dynamicRoutes as $path => $routes) {
-            $code .= sprintf("    %s => [\n", self::export($path));
+            $code .= \sprintf("    %s => [\n", self::export($path));
             foreach ($routes as $route) {
-                $r = array_map([__CLASS__, 'export'], $route);
-                $code .= sprintf("        [%s, %s, %s, %s, %s, %s, %s],\n", $r[0], $r[1], $r[2], $r[3], $r[4], $r[5], $r[6]);
+                $code .= vsprintf("        [%s, %s, %s, %s, %s, %s, %s],\n", array_map([__CLASS__, 'export'], $route));
             }
             $code .= "    ],\n";
         }
@@ -224,7 +222,12 @@ EOF;
         foreach ($staticRoutes as $url => $routes) {
             $compiledRoutes[$url] = [];
             foreach ($routes as $name => [$route, $hasTrailingSlash]) {
-                $compiledRoutes[$url][] = $this->compileRoute($route, $name, (!$route->compile()->getHostVariables() ? $route->getHost() : $route->compile()->getHostRegex()) ?: null, $hasTrailingSlash, false, $conditions);
+                if ($route->compile()->getHostVariables()) {
+                    $host = $route->compile()->getHostRegex();
+                } elseif ($host = $route->getHost()) {
+                    $host = strtolower($host);
+                }
+                $compiledRoutes[$url][] = $this->compileRoute($route, $name, $host ?: null, $hasTrailingSlash, false, $conditions);
             }
         }
 
@@ -351,7 +354,7 @@ EOF;
             $state->markTail = 0;
 
             // if the regex is too large, throw a signaling exception to recompute with smaller chunk size
-            set_error_handler(function ($type, $message) { throw str_contains($message, $this->signalingException->getMessage()) ? $this->signalingException : new \ErrorException($message); });
+            set_error_handler(fn ($type, $message) => throw str_contains($message, $this->signalingException->getMessage()) ? $this->signalingException : new \ErrorException($message));
             try {
                 preg_match($state->regex, '');
             } finally {
@@ -404,7 +407,7 @@ EOF;
 
             $state->mark += 3 + $state->markTail + \strlen($regex) - $prefixLen;
             $state->markTail = 2 + \strlen($state->mark);
-            $rx = sprintf('|%s(*:%s)', substr($regex, $prefixLen), $state->mark);
+            $rx = \sprintf('|%s(*:%s)', substr($regex, $prefixLen), $state->mark);
             $code .= "\n            .".self::export($rx);
             $state->regex .= $rx;
 
