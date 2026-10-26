@@ -10,6 +10,9 @@
 
 namespace Cloudinary\Transformation;
 
+use Cloudinary\Transformation\Argument\ColorValue;
+use Cloudinary\Transformation\Expression\Expression;
+
 /**
  * Class BasePad
  */
@@ -20,16 +23,14 @@ class Pad extends BaseResizeAction
     /**
      * Pad constructor.
      *
-     * @param      $cropMode
-     * @param null $width
-     * @param null $height
-     * @param null $background
+     * @param int|null|string|Expression   $width
+     * @param int|null|string|Expression   $height
      */
     public function __construct(
         $cropMode,
         $width = null,
         $height = null,
-        $background = null
+        Background|ColorValue|string|null $background = null
     ) {
         parent::__construct($cropMode, $width, $height);
 

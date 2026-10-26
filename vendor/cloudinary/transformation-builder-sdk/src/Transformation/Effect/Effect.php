@@ -16,9 +16,9 @@ use Cloudinary\ArrayUtils;
  * Defines effects that you can apply to transform your assets.
  *
  * **Learn more**: <a
- * href=https://cloudinary.com/documentation/image_transformations#applying_image_effects_and_filters target="_blank">
+ * href=https://cloudinary.com/documentation/effects_and_artistic_enhancements target="_blank">
  * Image effects</a> |
- * <a href=https://cloudinary.com/documentation/video_manipulation_and_delivery#video_effects target="_blank">
+ * <a href=https://cloudinary.com/documentation/video_effects_and_enhancements target="_blank">
  * Video effects</a>
  *
  * @api
@@ -35,9 +35,8 @@ abstract class Effect
      * @param string $name    The effect name.
      * @param mixed  ...$args Optional effect arguments.
      *
-     * @return EffectAction
      */
-    public static function generic($name, ...$args)
+    public static function generic(string $name, ...$args): EffectAction
     {
         return EffectAction::named($name, ...$args);
     }
@@ -45,11 +44,10 @@ abstract class Effect
     /**
      * Creates effect from an array of qualifiers.
      *
-     * @param string|array $qualifiers The effect qualifiers.
+     * @param array|string $qualifiers The effect qualifiers.
      *
-     * @return EffectAction
      */
-    public static function fromParams($qualifiers)
+    public static function fromParams(array|string $qualifiers): EffectAction
     {
         return EffectAction::fromParams(ArrayUtils::build($qualifiers));
     }

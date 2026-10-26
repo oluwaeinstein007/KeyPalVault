@@ -11,6 +11,8 @@
 namespace Cloudinary\Api\Admin;
 
 use Cloudinary\Api\ApiClient;
+use Cloudinary\Configuration\Configuration;
+use Psr\Http\Client\ClientInterface;
 
 /**
  * Enables Cloudinary Admin API functionality.
@@ -31,6 +33,7 @@ class AdminApi
     use UploadMappingsTrait;
     use MiscTrait;
     use MetadataFieldsTrait;
+    use AnalysisTrait;
 
     /**
      * @var ApiClient $apiClient The API client instance.
@@ -38,13 +41,36 @@ class AdminApi
     protected $apiClient;
 
     /**
+     * @var ApiClient $apiV2Client The API v2 client instance.
+     */
+    protected $apiV2Client;
+
+    /**
      * AdminApi constructor.
      *
-     * @param mixed $configuration
+     * @param mixed|null $configuration
      *
      * @noinspection UnusedConstructorDependenciesInspection*/
-    public function __construct($configuration = null)
+    public function __construct(mixed $configuration = null)
     {
         $this->apiClient = new ApiClient($configuration);
+
+        $apiV2Configuration = new Configuration($configuration);
+        $apiV2Configuration->api->apiVersion = '2';
+
+        $this->apiV2Client = new ApiClient($apiV2Configuration);
+    }
+
+    /**
+     * Sets a PSR-18 HTTP client for the requests of this API instance, or the default when null.
+     *
+     * @param ClientInterface|null $client The PSR-18 client.
+     */
+    public function setHttpClient(?ClientInterface $client): static
+    {
+        $this->apiClient->setHttpClient($client);
+        $this->apiV2Client->setHttpClient($client);
+
+        return $this;
     }
 }

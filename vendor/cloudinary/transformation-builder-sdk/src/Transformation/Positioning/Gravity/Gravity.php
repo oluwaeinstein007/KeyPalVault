@@ -13,10 +13,10 @@ namespace Cloudinary\Transformation;
 /**
  * Defines the focal gravity for certain methods of cropping.
  *
- * **Learn more**: <a href=https://cloudinary.com/documentation/image_transformations#control_gravity
+ * **Learn more**: <a href=https://cloudinary.com/documentation/resizing_and_cropping#control_gravity
  * target="_blank">
  * Image gravity</a> |
- * <a href=https://cloudinary.com/documentation/video_manipulation_and_delivery#gravity
+ * <a href=https://cloudinary.com/documentation/video_resizing_and_cropping#control_gravity
  * target="_blank">Video gravity</a>
  *
  * @api
@@ -33,9 +33,8 @@ abstract class Gravity
      *
      * @param mixed ...$objects The names of the objects.
      *
-     * @return ObjectGravity
      */
-    public static function focusOn(...$objects)
+    public static function focusOn(...$objects): ObjectGravity
     {
         return new ObjectGravity(...$objects);
     }

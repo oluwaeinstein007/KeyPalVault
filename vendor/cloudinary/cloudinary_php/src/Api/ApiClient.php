@@ -19,7 +19,6 @@ use Cloudinary\Configuration\Configuration;
 use Cloudinary\FileUtils;
 use Cloudinary\Utils;
 use Exception;
-use GuzzleHttp\Client;
 use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\LimitStream;
@@ -37,12 +36,11 @@ class ApiClient extends BaseApiClient
     /**
      * @var CloudConfig $cloud The cloud configuration.
      */
-    protected $cloud;
+    protected CloudConfig $cloud;
 
     /**
      * ApiClient constructor.
      *
-     * @param $configuration
      */
     public function __construct($configuration = null)
     {
@@ -52,24 +50,19 @@ class ApiClient extends BaseApiClient
 
         $this->configuration($configuration);
 
-        $this->baseUri = "{$this->api->uploadPrefix}/" . self::apiVersion() . "/{$this->cloud->cloudName}/";
+        $this->baseUri = "{$this->api->uploadPrefix}/" . self::apiVersion($this->api->apiVersion)
+                         . "/{$this->cloud->cloudName}/";
 
         $this->createHttpClient();
-    }
-
-    protected function createHttpClient()
-    {
-        $this->httpClient = new Client($this->buildHttpClientConfig());
     }
 
     /**
      * Gets cloud configuration of the current client.
      *
-     * @return CloudConfig
      *
      * @internal
      */
-    public function getCloud()
+    public function getCloud(): CloudConfig
     {
         return $this->cloud;
     }
@@ -79,11 +72,10 @@ class ApiClient extends BaseApiClient
      *
      * @param mixed $configuration The configuration source.
      *
-     * @return static
      *
      * @internal
      */
-    public function configuration($configuration)
+    public function configuration(mixed $configuration): static
     {
         $tempConfiguration = new Configuration($configuration); // TODO: improve performance here
 
@@ -97,14 +89,13 @@ class ApiClient extends BaseApiClient
     /**
      * Performs an HTTP POST request with the given form parameters.
      *
-     * @param string|array $endPoint   The API endpoint path.
+     * @param array|string $endPoint   The API endpoint path.
      * @param array        $formParams The form parameters
      *
-     * @return ApiResponse
      *
      * @internal
      */
-    public function postForm($endPoint, $formParams)
+    public function postForm(array|string $endPoint, array $formParams): ApiResponse
     {
         return $this->postFormAsync($endPoint, $formParams)->wait();
     }
@@ -114,16 +105,15 @@ class ApiClient extends BaseApiClient
      *
      * Please note that form parameters are encoded in a slightly different way, see Utils::buildHttpQuery for details.
      *
-     * @param string|array $endPoint   The API endpoint path.
+     * @param array|string $endPoint   The API endpoint path.
      * @param array        $formParams The form parameters
      *
-     * @return PromiseInterface
      *
      * @see Utils::buildHttpQuery
      *
      * @internal
      */
-    public function postFormAsync($endPoint, $formParams)
+    public function postFormAsync(array|string $endPoint, array $formParams): PromiseInterface
     {
         return $this->callAsync(HttpMethod::POST, $endPoint, ['body' => Utils::buildHttpQuery($formParams)]);
     }
@@ -131,16 +121,15 @@ class ApiClient extends BaseApiClient
     /**
      * Signs posted parameters using configured cloud credentials and posts to the endpoint.
      *
-     * @param string|array $endPoint   The API endpoint path.
+     * @param array|string $endPoint   The API endpoint path.
      * @param array        $formParams The form parameters
      *
-     * @return PromiseInterface
      *
      * @internal
      */
-    public function postAndSignFormAsync($endPoint, $formParams)
+    public function postAndSignFormAsync(array|string $endPoint, array $formParams): PromiseInterface
     {
-        if (!$this->cloud->oauthToken) {
+        if (! $this->cloud->oauthToken) {
             ApiUtils::signRequest($formParams, $this->cloud);
         }
 
@@ -150,14 +139,13 @@ class ApiClient extends BaseApiClient
     /**
      * Signs posted parameters using configured account credentials and posts as a JSON to the endpoint.
      *
-     * @param string|array $endPoint The API endpoint path.
+     * @param array|string $endPoint The API endpoint path.
      * @param array        $params   The parameters
      *
-     * @return PromiseInterface
      *
      * @internal
      */
-    public function postAndSignJsonAsync($endPoint, $params)
+    public function postAndSignJsonAsync(array|string $endPoint, array $params): PromiseInterface
     {
         ApiUtils::signRequest($params, $this->cloud);
 
@@ -167,17 +155,18 @@ class ApiClient extends BaseApiClient
     /**
      * Helper method for posting multipart data asynchronously.
      *
-     * @param string|array $endPoint The API endpoint path.
-     * @param              $multiPart
-     * @param array        $headers
+     * @param array|string $endPoint The API endpoint path.
      * @param array        $options  Additional options for Http client
      *
-     * @return PromiseInterface
      *
      * @internal
      */
-    public function postMultiPartAsync($endPoint, $multiPart, $headers = null, $options = [])
-    {
+    public function postMultiPartAsync(
+        array|string $endPoint,
+        mixed $multiPart,
+        ?array $headers = null,
+        array $options = []
+    ): PromiseInterface {
         ArrayUtils::addNonEmpty($options, 'multipart', $multiPart);
         ArrayUtils::addNonEmpty($options, 'headers', $headers);
 
@@ -187,36 +176,36 @@ class ApiClient extends BaseApiClient
     /**
      * Helper method for posting multipart data.
      *
-     * @param string|array $endPoint The API endpoint path.
-     * @param              $multiPart
-     * @param array        $headers
+     * @param array|string $endPoint The API endpoint path.
      * @param array        $options  Additional options for Http client
      *
-     * @return ApiResponse
      *
      * @internal
      *
      */
-    public function postMultiPart($endPoint, $multiPart, $headers = null, $options = [])
-    {
+    public function postMultiPart(
+        array|string $endPoint,
+        mixed $multiPart,
+        ?array $headers = null,
+        array $options = []
+    ): ApiResponse {
         return $this->postMultiPartAsync($endPoint, $multiPart, $headers, $options)->wait();
     }
 
     /**
      * Uploads a file to the Cloudinary server.
      *
-     * @param string|array $endPoint   The API endpoint path.
+     * @param array|string $endPoint   The API endpoint path.
      * @param mixed        $file       File to upload, can be a local path, URL, stream, etc.
      * @param array        $parameters Additional parameters to be sent in the body
      * @param array        $options    Additional options, including options for the HTTP client
      *
-     * @return ApiResponse
      *
      * @throws ApiError
      *
      * @internal
      */
-    public function postFile($endPoint, $file, $parameters, $options = [])
+    public function postFile(array|string $endPoint, mixed $file, array $parameters, array $options = []): ApiResponse
     {
         return $this->postFileAsync($endPoint, $file, $parameters, $options)->wait();
     }
@@ -224,23 +213,26 @@ class ApiClient extends BaseApiClient
     /**
      * Uploads a file to the Cloudinary server asynchronously.
      *
-     * @param string|array $endPoint   The API endpoint path.
+     * @param array|string $endPoint   The API endpoint path.
      * @param mixed        $file       File to upload, can be a local path, URL, stream, etc.
      * @param array        $parameters Additional parameters to be sent in the body
      * @param array        $options    Additional options, including options for the HTTP client
      *
-     * @return PromiseInterface
      *
      * @throws ApiError
      * @throws Exception
      *
      * @internal
      */
-    public function postFileAsync($endPoint, $file, $parameters, $options = [])
-    {
+    public function postFileAsync(
+        array|string $endPoint,
+        mixed $file,
+        array $parameters,
+        array $options = []
+    ): PromiseInterface {
         $unsigned = ArrayUtils::get($options, 'unsigned');
 
-        if (!$this->cloud->oauthToken && !$unsigned) {
+        if (! isset($this->cloud->oauthToken) && ! $unsigned) {
             ApiUtils::signRequest($parameters, $this->cloud);
         }
 
@@ -286,14 +278,13 @@ class ApiClient extends BaseApiClient
      * Performs an HTTP call asynchronously.
      *
      * @param string       $method   An HTTP method.
-     * @param string|array $endPoint An API endpoint path.
+     * @param array|string $endPoint An API endpoint path.
      * @param array        $options  An array containing request body and additional options passed to the HTTP Client.
      *
-     * @return PromiseInterface
      *
      * @internal
      */
-    protected function callAsync($method, $endPoint, $options)
+    protected function callAsync(string $method, array|string $endPoint, array $options): PromiseInterface
     {
         static::validateAuthorization($this->cloud, $options);
 
@@ -303,18 +294,21 @@ class ApiClient extends BaseApiClient
     /**
      * Posts a large file in chunks asynchronously
      *
-     * @param string|array    $endPoint   The API endpoint path.
+     * @param array|string    $endPoint   The API endpoint path.
      * @param StreamInterface $fileHandle The file handle
      * @param array           $parameters Additional form parameters
      * @param array           $options    Additional options
      *
-     * @return PromiseInterface
      * @throws Exception
      *
      * @internal
      */
-    private function postLargeFileAsync($endPoint, $fileHandle, $parameters, $options = [])
-    {
+    private function postLargeFileAsync(
+        array|string $endPoint,
+        StreamInterface $fileHandle,
+        array $parameters,
+        array $options = []
+    ): PromiseInterface {
         $this->getLogger()->debug('Making a Large File Async POST request');
 
         $uploadResult = null;
@@ -367,20 +361,23 @@ class ApiClient extends BaseApiClient
     /**
      * Posts a single chunk of the large file upload request asynchronously
      *
-     * @param string|array $endPoint    The API endpoint path.
+     * @param array|string $endPoint    The API endpoint path.
      * @param mixed        $singleChunk The data of a single chunk of the file
      * @param array        $parameters  Additional form parameters
      * @param array        $options     Additional options
      *
-     * @return PromiseInterface
      *
      * @internal
      *
      */
-    protected function postSingleChunkAsync($endPoint, $singleChunk, $parameters, $options = [])
-    {
+    protected function postSingleChunkAsync(
+        array|string $endPoint,
+        mixed $singleChunk,
+        array $parameters,
+        array $options = []
+    ): PromiseInterface {
         $filePart = [
-            'name'     => 'file',
+            'name'     => ArrayUtils::get($options, 'file_field', 'file'),
             'contents' => $singleChunk,
         ];
 
@@ -397,11 +394,10 @@ class ApiClient extends BaseApiClient
     /**
      * Build configuration used by HTTP client
      *
-     * @return array
      *
      * @internal
      */
-    protected function buildHttpClientConfig()
+    protected function buildHttpClientConfig(): array
     {
         $clientConfig = [
             'base_uri'        => $this->baseUri,
@@ -414,15 +410,22 @@ class ApiClient extends BaseApiClient
 
         if (isset($this->cloud->oauthToken)) {
             $authConfig = [
-                'headers' => ['Authorization' => 'Bearer ' . $this->cloud->oauthToken]
+                'headers' => ['Authorization' => 'Bearer ' . $this->cloud->oauthToken],
+            ];
+        } elseif (! empty($this->cloud->apiKey) && ! empty($this->cloud->apiSecret)) {
+            $authConfig = [
+                'auth' => [$this->cloud->apiKey, $this->cloud->apiSecret],
             ];
         } else {
-            $authConfig = [
-                'auth' => [$this->cloud->apiKey, $this->cloud->apiSecret]
-            ];
+            $authConfig = [];
         }
 
-        return array_merge_recursive($clientConfig, $authConfig);
+        if (isset($authConfig['headers'])) {
+            $clientConfig['headers'] = array_merge($clientConfig['headers'], $authConfig['headers']);
+            unset($authConfig['headers']);
+        }
+
+        return array_merge($clientConfig, $authConfig, self::httpHandlerConfig($this->psrHttpClient));
     }
 
     /**
@@ -430,17 +433,14 @@ class ApiClient extends BaseApiClient
      *
      * @param array $parameters The input parameters
      *
-     * @return array
      *
      * @internal
      */
-    private static function buildMultiPart($parameters)
+    private static function buildMultiPart(array $parameters): array
     {
         return array_values(
             ArrayUtils::mapAssoc(
-                static function ($key, $value) {
-                    return ['name' => $key, 'contents' => $value];
-                },
+                static fn($key, $value) => ['name' => $key, 'contents' => $value],
                 $parameters
             )
         );
@@ -457,7 +457,7 @@ class ApiClient extends BaseApiClient
      *
      * @internal
      */
-    protected static function validateAuthorization($cloudConfig, $options)
+    protected static function validateAuthorization(CloudConfig $cloudConfig, array $options): void
     {
         $keysToValidate = ['cloudName'];
 

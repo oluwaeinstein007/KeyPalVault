@@ -13,7 +13,9 @@ namespace Cloudinary\Api\Provisioning;
 use Cloudinary\Api\ApiResponse;
 use Cloudinary\Api\ApiUtils;
 use Cloudinary\Api\Exception\ApiError;
+use Cloudinary\ArrayUtils;
 use Cloudinary\Configuration\Provisioning\ProvisioningConfiguration;
+use Psr\Http\Client\ClientInterface;
 
 /**
  * Class AccountApi
@@ -24,19 +26,27 @@ use Cloudinary\Configuration\Provisioning\ProvisioningConfiguration;
  */
 class AccountApi
 {
-    /**
-     * @var AccountApiClient $accountApiClient
-     */
-    private $accountApiClient;
+    protected AccountApiClient $accountApiClient;
 
     /**
      * AccountApi constructor.
      *
-     * @param ProvisioningConfiguration $configuration
      */
-    public function __construct(ProvisioningConfiguration $configuration = null)
+    public function __construct(?ProvisioningConfiguration $configuration = null)
     {
         $this->accountApiClient = new AccountApiClient($configuration);
+    }
+
+    /**
+     * Sets a PSR-18 HTTP client for the requests of this API instance, or the default when null.
+     *
+     * @param ClientInterface|null $client The PSR-18 client.
+     */
+    public function setHttpClient(?ClientInterface $client): static
+    {
+        $this->accountApiClient->setHttpClient($client);
+
+        return $this;
     }
 
     /**
@@ -48,7 +58,7 @@ class AccountApi
      *
      * @api
      */
-    public function user($userId)
+    public function user(string $userId): ApiResponse
     {
         $uri = [AccountEndPoint::USERS, $userId];
 
@@ -58,17 +68,21 @@ class AccountApi
     /**
      * Gets a list of the users according to filters.
      *
-     * @param bool   $pending      Whether to fetch pending users. Default all.
-     * @param array  $userIds      List of user IDs. Up to 100.
-     * @param string $prefix       Search by prefix of the user's name or email. Case-insensitive.
-     * @param string $subAccountId Return only users who have access to the given sub-account.
+     * @param bool|null   $pending      Whether to fetch pending users. Default all.
+     * @param array       $userIds      List of user IDs. Up to 100.
+     * @param string|null $prefix       Search by prefix of the user's name or email. Case-insensitive.
+     * @param string|null $subAccountId Return only users who have access to the given sub-account.
      *
      * @return ApiResponse List of users associated with the account.
      *
      * @api
      */
-    public function users($pending = null, array $userIds = [], $prefix = null, $subAccountId = null)
-    {
+    public function users(
+        ?bool $pending = null,
+        array $userIds = [],
+        ?string $prefix = null,
+        ?string $subAccountId = null
+    ): ApiResponse {
         $uri = [AccountEndPoint::USERS];
 
         $params = [
@@ -92,7 +106,7 @@ class AccountApi
      *
      * @return ApiResponse Details of created user.
      */
-    public function createUser($name, $email, $role, array $subAccountIds = [])
+    public function createUser(string $name, string $email, string $role, array $subAccountIds = []): ApiResponse
     {
         $uri = [AccountEndPoint::USERS];
 
@@ -117,12 +131,16 @@ class AccountApi
      *                                If not provided or empty, user should have access to all accounts.
      *
      * @return ApiResponse The updated user details.
-     * @throws ApiError
      *
      * @api
      */
-    public function updateUser($userId, $name, $email, $role, array $subAccountIds = [])
-    {
+    public function updateUser(
+        string $userId,
+        string $name,
+        string $email,
+        string $role,
+        array $subAccountIds = []
+    ): ApiResponse {
         $uri = [AccountEndPoint::USERS, $userId];
 
         $params = [
@@ -141,11 +159,10 @@ class AccountApi
      * @param string $userId Id of the user to delete.
      *
      * @return ApiResponse Result message.
-     * @throws ApiError
      *
      * @api
      */
-    public function deleteUser($userId)
+    public function deleteUser(string $userId): ApiResponse
     {
         $uri = [AccountEndPoint::USERS, $userId];
 
@@ -153,18 +170,18 @@ class AccountApi
     }
 
     /**
-     * Lists all sub accounts.
+     * Lists all sub-accounts.
      *
-     * @param bool   $enabled Whether to only return enabled sub-accounts (true) or disabled accounts (false).
-     *                        Default: all accounts are returned (both enabled and disabled).
-     * @param array  $ids     List of sub-account IDs. Up to 100. When provided, other filters are ignored.
-     * @param string $prefix  Search by prefix of the sub-account name. Case-insensitive.
+     * @param bool|null   $enabled Whether to only return enabled sub-accounts (true) or disabled accounts (false).
+     *                             Default: all accounts are returned (both enabled and disabled).
+     * @param array|null  $ids     List of sub-account IDs. Up to 100. When provided, other filters are ignored.
+     * @param string|null $prefix  Search by prefix of the sub-account name. Case-insensitive.
      *
      * @return ApiResponse A list of sub accounts
      *
      * @api
      */
-    public function subAccounts($enabled = null, $ids = [], $prefix = null)
+    public function subAccounts(?bool $enabled = null, ?array $ids = [], ?string $prefix = null): ApiResponse
     {
         $uri = [AccountEndPoint::SUB_ACCOUNTS];
 
@@ -180,25 +197,25 @@ class AccountApi
     /**
      * Creates a new sub account.
      *
-     * @param string $name             Name of the new sub account.
-     * @param string $cloudName        A case-insensitive cloud name comprised of alphanumeric and underscore.
-     *                                 characters. Generates an error if the cloud name is not unique across all
-     *                                 Cloudinary accounts.
-     * @param array  $customAttributes Any custom attributes you want to associate with the sub-account.
-     * @param bool   $enabled          Whether to create the account as enabled (default is enabled).
-     * @param string $baseAccount      ID of sub-account from which to copy settings.
+     * @param string      $name             Name of the new sub account.
+     * @param string|null $cloudName        A case-insensitive cloud name comprised of alphanumeric and underscore.
+     *                                      characters. Generates an error if the cloud name is not unique across all
+     *                                      Cloudinary accounts.
+     * @param array|null  $customAttributes Any custom attributes you want to associate with the sub-account.
+     * @param bool|null   $enabled          Whether to create the account as enabled (default is enabled).
+     * @param string|null $baseAccount      ID of sub-account from which to copy settings.
      *
      * @return ApiResponse The created sub account.
      *
      * @api
      */
     public function createSubAccount(
-        $name,
-        $cloudName = null,
-        $customAttributes = null,
-        $enabled = null,
-        $baseAccount = null
-    ) {
+        string $name,
+        ?string $cloudName = null,
+        ?array $customAttributes = null,
+        ?bool $enabled = null,
+        ?string $baseAccount = null
+    ): ApiResponse {
         $uri = [AccountEndPoint::SUB_ACCOUNTS];
 
         $params = [
@@ -218,11 +235,10 @@ class AccountApi
      * @param string $subAccountId The id of the sub account.
      *
      * @return ApiResponse The message.
-     * @throws ApiError
      *
      * @api
      */
-    public function deleteSubAccount($subAccountId)
+    public function deleteSubAccount(string $subAccountId): ApiResponse
     {
         $uri = [AccountEndPoint::SUB_ACCOUNTS, $subAccountId];
 
@@ -238,7 +254,7 @@ class AccountApi
      *
      * @api
      */
-    public function subAccount($subAccountId)
+    public function subAccount(string $subAccountId): ApiResponse
     {
         $uri = [AccountEndPoint::SUB_ACCOUNTS, $subAccountId];
 
@@ -248,24 +264,23 @@ class AccountApi
     /**
      * Updates a sub account.
      *
-     * @param string $subAccountId     The id of the sub account.
-     * @param string $name             The name displayed in the management console.
-     * @param string $cloudName        The cloud name to set.
-     * @param array  $customAttributes Custom attributes associated with the sub-account, as a map of key/value pairs.
-     * @param bool   $enabled          Set the sub-account as enabled or not.
+     * @param string      $subAccountId     The id of the sub account.
+     * @param string|null $name             The name displayed in the management console.
+     * @param string|null $cloudName        The cloud name to set.
+     * @param array|null  $customAttributes Custom attributes associated with the sub-account, as a map of key/value
+     *                                      pairs.
+     * @param bool|null   $enabled          Set the sub-account as enabled or not.
      *
-     * @return ApiResponse
-     * @throws ApiError
      *
      * @api
      */
     public function updateSubAccount(
-        $subAccountId,
-        $name = null,
-        $cloudName = null,
-        $customAttributes = null,
-        $enabled = null
-    ) {
+        string $subAccountId,
+        ?string $name = null,
+        ?string $cloudName = null,
+        ?array $customAttributes = null,
+        ?bool $enabled = null
+    ): ApiResponse {
         $uri = [AccountEndPoint::SUB_ACCOUNTS, $subAccountId];
 
         $params = [
@@ -287,7 +302,7 @@ class AccountApi
      *
      * @api
      */
-    public function createUserGroup($name)
+    public function createUserGroup(string $name): ApiResponse
     {
         $uri = [AccountEndPoint::USER_GROUPS];
 
@@ -301,11 +316,10 @@ class AccountApi
      * @param string $name    The name of the group.
      *
      * @return ApiResponse The updated group.
-     * @throws ApiError
      *
      * @api
      */
-    public function updateUserGroup($groupId, $name)
+    public function updateUserGroup(string $groupId, string $name): ApiResponse
     {
         $uri = [AccountEndPoint::USER_GROUPS, $groupId];
 
@@ -318,11 +332,10 @@ class AccountApi
      * @param string $groupId The group id to delete.
      *
      * @return ApiResponse A result message.
-     * @throws ApiError
      *
      * @api
      */
-    public function deleteUserGroup($groupId)
+    public function deleteUserGroup(string $groupId): ApiResponse
     {
         $uri = [AccountEndPoint::USER_GROUPS, $groupId];
 
@@ -338,7 +351,7 @@ class AccountApi
      *
      * @api
      */
-    public function userGroup($groupId)
+    public function userGroup(string $groupId): ApiResponse
     {
         $uri = [AccountEndPoint::USER_GROUPS, $groupId];
 
@@ -353,7 +366,7 @@ class AccountApi
      *
      * @api
      */
-    public function userGroups()
+    public function userGroups(): ApiResponse
     {
         $uri = [AccountEndPoint::USER_GROUPS];
 
@@ -370,7 +383,7 @@ class AccountApi
      *
      * @api
      */
-    public function addUserToGroup($groupId, $userId)
+    public function addUserToGroup(string $groupId, string $userId): ApiResponse
     {
         $uri = [AccountEndPoint::USER_GROUPS, $groupId, AccountEndPoint::USERS, $userId];
 
@@ -384,11 +397,10 @@ class AccountApi
      * @param string $userId  The id of the user to remove.
      *
      * @return ApiResponse A list of users in the group.
-     * @throws ApiError
      *
      * @api
      */
-    public function removeUserFromGroup($groupId, $userId)
+    public function removeUserFromGroup(string $groupId, string $userId): ApiResponse
     {
         $uri = [AccountEndPoint::USER_GROUPS, $groupId, AccountEndPoint::USERS, $userId];
 
@@ -404,10 +416,68 @@ class AccountApi
      *
      * @api
      */
-    public function userGroupUsers($groupId)
+    public function userGroupUsers(string $groupId): ApiResponse
     {
         $uri = [AccountEndPoint::USER_GROUPS, $groupId, AccountEndPoint::USERS];
 
         return $this->accountApiClient->get($uri);
+    }
+
+    /**
+     * Gets sub account access keys.
+     *
+     * @param string $subAccountId The id of the sub account.
+     * @param array  $options      Additional options.
+     *
+     * @return ApiResponse A list of access keys.
+     *
+     * @api
+     */
+    public function accessKeys(string $subAccountId, array $options = []): ApiResponse
+    {
+        $uri = [AccountEndPoint::SUB_ACCOUNTS, $subAccountId, AccountEndPoint::ACCESS_KEYS];
+
+        $params = ArrayUtils::whitelist($options, ['page_size', 'page', 'sort_by', 'sort_order']);
+
+        return $this->accountApiClient->get($uri, $params);
+    }
+
+    /**
+     * Generates a new access key.
+     *
+     * @param string $subAccountId The id of the sub account.
+     * @param array  $options      Additional options.
+     *
+     * @return ApiResponse Generated access key.
+     *
+     * @api
+     */
+    public function generateAccessKey(string $subAccountId, array $options = []): ApiResponse
+    {
+        $uri = [AccountEndPoint::SUB_ACCOUNTS, $subAccountId, AccountEndPoint::ACCESS_KEYS];
+
+        $params = ArrayUtils::whitelist($options, ['name', 'enabled']);
+
+        return $this->accountApiClient->postJson($uri, $params);
+    }
+
+    /**
+     * Updates the access key.
+     *
+     * @param string $subAccountId The id of the sub account.
+     * @param string $apiKey       The Api Key.
+     * @param array  $options      Additional options.
+     *
+     * @return ApiResponse Updated access key.
+     *
+     * @api
+     */
+    public function updateAccessKey(string $subAccountId, string $apiKey, array $options = []): ApiResponse
+    {
+        $uri = [AccountEndPoint::SUB_ACCOUNTS, $subAccountId, AccountEndPoint::ACCESS_KEYS, $apiKey];
+
+        $params = ArrayUtils::whitelist($options, ['name', 'enabled']);
+
+        return $this->accountApiClient->putJson($uri, $params);
     }
 }

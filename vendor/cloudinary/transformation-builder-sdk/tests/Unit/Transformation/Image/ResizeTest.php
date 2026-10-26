@@ -10,14 +10,18 @@
 
 namespace Cloudinary\Test\Unit\Transformation\Image;
 
+use Cloudinary\Test\TransformationTestCase;
 use Cloudinary\Transformation\Argument\Color;
 use Cloudinary\Transformation\AspectRatio;
 use Cloudinary\Transformation\AutoGravity;
+use Cloudinary\Transformation\Background;
 use Cloudinary\Transformation\CompassGravity;
 use Cloudinary\Transformation\CompassPosition;
 use Cloudinary\Transformation\Crop;
+use Cloudinary\Transformation\CropPad;
 use Cloudinary\Transformation\Fill;
 use Cloudinary\Transformation\FillPad;
+use Cloudinary\Transformation\FocusOn;
 use Cloudinary\Transformation\Gravity;
 use Cloudinary\Transformation\Pad;
 use Cloudinary\Transformation\Qualifier;
@@ -25,12 +29,11 @@ use Cloudinary\Transformation\Resize;
 use Cloudinary\Transformation\ResizeMode;
 use Cloudinary\Transformation\Scale;
 use InvalidArgumentException;
-use PHPUnit\Framework\TestCase;
 
 /**
  * Class ResizeTest
  */
-final class ResizeTest extends TestCase
+final class ResizeTest extends TransformationTestCase
 {
     public function testScale()
     {
@@ -238,11 +241,50 @@ final class ResizeTest extends TestCase
             'c_thumb,g_auto,h_200,w_100,z_0.5',
             (string)$thumb
         );
+
+        self::assertStrEquals(
+            'c_auto,g_auto,h_200,w_100',
+            Crop::auto(100, 200, Gravity::auto())
+        );
+
+        self::assertStrEquals(
+            'c_auto,g_auto,h_200,w_100',
+            Crop::auto()->width(100)->height(200)->gravity(Gravity::auto())
+        );
+
+        self::assertStrEquals(
+            'ar_0.5,c_auto,g_auto',
+            Crop::auto()->gravity(Gravity::auto())->aspectRatio(0.5)
+        );
+    }
+
+    public function testCropAutoPad()
+    {
+        self::assertStrEquals(
+            'c_auto_pad,g_auto,h_200,w_100',
+            CropPad::autoPad(100, 200)
+        );
+
+        self::assertStrEquals(
+            'c_auto_pad,g_auto,h_200,w_100,z_0.5',
+            CropPad::autoPad(100, 200, Gravity::auto())->zoom(0.5)
+        );
+
+        self::assertStrEquals(
+            'c_auto_pad,g_auto:dog,h_200,w_100',
+            CropPad::autoPad(100, 200, Gravity::auto()->autoFocus(FocusOn::dog()))
+        );
+
+        self::assertStrEquals(
+            'b_gen_fill,c_auto_pad,g_auto:dog,h_200,w_100',
+            CropPad::autoPad(100, 200, Gravity::auto()->autoFocus(FocusOn::dog()))->background(
+                Background::generativeFill()
+            )
+        );
     }
 
     public function testResize()
     {
-        /** @noinspection PhpUndefinedMethodInspection */
         self::assertEquals(
             'c_scale,fl_ignore_aspect_ratio,g_liquid,h_200,w_100',
             (string)Resize::scale(100, 200)->aspectRatio(AspectRatio::ignoreInitialAspectRatio())->liquidRescaling()
@@ -287,6 +329,11 @@ final class ResizeTest extends TestCase
         self::assertEquals(
             'c_crop,h_70,w_50,z_0.5',
             (string)Resize::crop(50, 70)->zoom(0.5)
+        );
+
+        self::assertStrEquals(
+            'b_gen_fill,c_auto_pad,g_auto:dog,h_200,w_100',
+            Resize::autoPad(100, 200, Gravity::auto()->autoFocus(FocusOn::dog()), Background::generativeFill())
         );
     }
 }

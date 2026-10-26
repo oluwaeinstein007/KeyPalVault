@@ -25,13 +25,13 @@ class ClippingPath extends BasePageAction
     /**
      * ClippingPath constructor.
      *
-     * @param string        $clippingPath The clipping path name.
-     * @param FlagQualifier $method       The clipping method. Can be Flag::clip() or Flag::clipEvenOdd().
+     * @param string             $clippingPath The clipping path name.
+     * @param FlagQualifier|null $method       The clipping method. Can be Flag::clip() or Flag::clipEvenOdd().
      *
      * @see Flag::clip
      * @see Flag::clipEvenOdd
      */
-    public function __construct($clippingPath, FlagQualifier $method = null)
+    public function __construct($clippingPath, ?FlagQualifier $method = null)
     {
         parent::__construct(ClassUtils::verifyInstance($clippingPath, PageQualifier::class));
 
@@ -44,9 +44,8 @@ class ClippingPath extends BasePageAction
     /**
      * Trims pixels according to a clipping path included in the original image using an evenodd clipping rule.
      *
-     * @return static
      */
-    public function evenOdd()
+    public function evenOdd(): static
     {
         return $this->unsetFlag(Flag::clip())->setFlag(Flag::clipEvenOdd());
     }

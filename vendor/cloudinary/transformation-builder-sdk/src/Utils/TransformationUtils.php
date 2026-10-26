@@ -20,12 +20,8 @@ class TransformationUtils
 {
     /**
      * Converts a float value to the string representation.
-     *
-     * @param mixed $value
-     *
-     * @return mixed|string
      */
-    public static function floatToString($value)
+    public static function floatToString(mixed $value): mixed
     {
         if (! is_float($value)) {
             return $value;
@@ -34,14 +30,13 @@ class TransformationUtils
         // Ensure that trailing decimal(.0) part is not cropped when float is provided.
         // e.g. float 1.0 should be returned as "1.0" and not "1" as it happens by default.
         if ($value - (int)$value === 0.0) {
-            return sprintf("%.1f", $value);
+            return sprintf('%.1f', $value);
         }
 
         $locale = localeconv();
         $string = (string)$value;
-        $string = str_replace($locale['decimal_point'], '.', $string);
 
-        return $string;
+        return str_replace($locale['decimal_point'], '.', $string);
     }
 
     /**
@@ -49,15 +44,24 @@ class TransformationUtils
      *
      * @param mixed $value Candidate to convert. If not boolean, returned as is
      *
-     * @return string
      */
-    public static function boolToIntString($value)
+    public static function boolToIntString(mixed $value): mixed
     {
-        if (! is_bool($value)) {
-            return $value;
-        }
+        return self::boolToString($value, '1', '0');
+    }
 
-        return $value ? '1' : '0';
+    /**
+     * Helper method for converting boolean to any representation as string.
+     *
+     * @param mixed $value Candidate to convert. If not boolean, returned as is
+     *
+     */
+    public static function boolToString(
+        mixed $value,
+        ?string $trueString = 'true',
+        ?string $falseString = 'false'
+    ): mixed {
+        return is_bool($value) ? ($value ? $trueString : $falseString) : $value;
     }
 
 
@@ -66,9 +70,8 @@ class TransformationUtils
      *
      * @param int $bytes The input value to convert.
      *
-     * @return int
      */
-    public static function bytesToKB($bytes)
+    public static function bytesToKB(int $bytes): int
     {
         return (int)ceil($bytes / 1024);
     }
@@ -78,9 +81,8 @@ class TransformationUtils
      *
      * @param int $number The number to format
      *
-     * @return string
      */
-    public static function formatSigned($number)
+    public static function formatSigned(int $number): string
     {
         return $number > 0 ? "+$number" : (string)$number;
     }

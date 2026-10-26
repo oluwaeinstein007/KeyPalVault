@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of the Cloudinary PHP package.
  *
@@ -25,19 +26,17 @@ class FileUtils
     /**
      * @var int Maximum number of characters allowed for the file extension.
      */
-    const MAX_FILE_EXTENSION_LEN = 5;
+    protected const MAX_FILE_EXTENSION_LEN = 5;
 
-    const SUPPORTED_FETCH_PROTOCOLS = ['ftp', 'http', 'https', 's3', 'gs'];
-    const BASE64_DATA_REGEX         = '/^data:([\w-]+\/[\w\-\+.]+)?(;[\w-]+=[\w-]+)*;base64,([a-zA-Z0-9\/+\n=]+)$/';
+    protected const SUPPORTED_FETCH_PROTOCOLS = ['ftp', 'http', 'https', 's3', 'gs'];
+    protected const BASE64_DATA_REGEX         = '/^data:([\w-]+\/[\w\-\+.]+)?(;[\w-]+=[\w-]+)*;base64,([a-zA-Z0-9\/+\n=]+)$/';
 
     /**
      * Helper function that removes current dir(.) if no dirname found.
      *
-     * @param $path
      *
-     * @return mixed|null
      */
-    public static function dirName($path)
+    public static function dirName($path): string|array|null
     {
         return ! empty($path) && pathinfo($path, PATHINFO_DIRNAME) !== '.' ? pathinfo($path, PATHINFO_DIRNAME) : null;
     }
@@ -51,7 +50,7 @@ class FileUtils
      *
      * @return array containing filename and extension.
      */
-    public static function splitPathFilenameExtension($fullPath)
+    public static function splitPathFilenameExtension(string $fullPath): array
     {
         if (empty($fullPath)) {
             return ['', '', ''];
@@ -74,11 +73,9 @@ class FileUtils
     /**
      * Removes file extension from the file path (can be full path or just filename)
      *
-     * @param $path
      *
-     * @return string
      */
-    public static function removeFileExtension($path)
+    public static function removeFileExtension($path): string
     {
         return implode('/', ArrayUtils::safeFilter([self::dirName($path), pathinfo($path, PATHINFO_FILENAME)]));
     }
@@ -90,7 +87,7 @@ class FileUtils
      *
      * @return false|int
      */
-    public static function isBase64Data($data)
+    public static function isBase64Data(mixed $data): bool|int
     {
         return is_string($data) && preg_match(self::BASE64_DATA_REGEX, $data);
     }
@@ -102,7 +99,7 @@ class FileUtils
      *
      * @return bool|UriInterface URL or false if not a valid URL.
      */
-    public static function tryGetFetchUrl($url)
+    public static function tryGetFetchUrl(mixed $url): UriInterface|bool
     {
         return Utils::tryParseUrl($url, self::SUPPORTED_FETCH_PROTOCOLS);
     }
@@ -112,9 +109,8 @@ class FileUtils
      *
      * @param mixed $path Path candidate to check.
      *
-     * @return bool
      */
-    public static function isLocalFilePath($path)
+    public static function isLocalFilePath(mixed $path): bool
     {
         return is_string($path) && ! (self::tryGetFetchUrl($path) || self::isBase64Data($path));
     }
@@ -132,7 +128,7 @@ class FileUtils
      *
      * @see fopen
      */
-    public static function safeFileOpen($filename, $mode, $useIncludePath = false)
+    public static function safeFileOpen(string $filename, string $mode, bool $useIncludePath = false)
     {
         if (empty($filename)) {
             throw new GeneralError('Path cannot be empty');
@@ -142,7 +138,7 @@ class FileUtils
 
         if (! $fp) {
             $err = error_get_last();
-            throw new GeneralError($err['message']);
+            throw new GeneralError($err['message'] ?? 'Failed to open file: ' . $filename);
         }
 
         return $fp;
@@ -151,15 +147,13 @@ class FileUtils
     /**
      * Internal helper method for preparing file for the upload.
      *
-     * @param string|StreamInterface|resource $file The file.
+     * @param mixed $file The file.
      *
-     * @return UriInterface|StreamInterface
      *
      * @throws GeneralError
-     *
      * @internal
      */
-    public static function handleFile($file)
+    public static function handleFile(mixed $file): UriInterface|StreamInterface|bool
     {
         $url = self::tryGetFetchUrl($file);
         if ($url !== false) {

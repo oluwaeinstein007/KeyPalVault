@@ -22,46 +22,29 @@ use Cloudinary\ArrayUtils;
 abstract class BaseSourceContainer extends BaseAction
 {
     /**
-     * @var BaseSource $source The source of the layer.
+     * @var ?BaseSource $source The source of the layer.
      */
-    protected $source;
+    protected ?BaseSource $source;
 
     /**
-     * @var Position $position Layer position.
-     */
-    protected $position;
-
-    /**
-     * BaseLayerContainer constructor.
+     * BaseSourceContainer constructor.
      *
-     * @param BaseSource|string $source   The source.
-     * @param Position          $position Layer position.
+     * @param BaseSource|string|null $source   The source.
      */
-    public function __construct($source = null, $position = null)
+    public function __construct(BaseSource|string|null $source = null)
     {
         parent::__construct();
 
         $this->source($source);
-        $this->position($position);
     }
 
     /**
      * Sets the source.
      *
-     * @param BaseSource $source The source.
+     * @param BaseSource|string|null $source The source.
      *
-     * @return static
      */
-    abstract public function source($source);
-
-    /**
-     * Sets the source position.
-     *
-     * @param Position $position The Position of the layer.
-     *
-     * @return static
-     */
-    abstract public function position($position = null);
+    abstract public function source(BaseSource|string|null $source): static;
 
     /**
      * Sets stack position of the source.
@@ -70,7 +53,7 @@ abstract class BaseSourceContainer extends BaseAction
      *
      * @return $this
      */
-    public function setStackPosition($stackPosition)
+    public function setStackPosition(string $stackPosition): static
     {
         $this->source->setStackPosition($stackPosition);
 
@@ -96,11 +79,10 @@ abstract class BaseSourceContainer extends BaseAction
      *
      * @internal
      */
-    protected function getSubActionQualifiers()
+    protected function getSubActionQualifiers(): array
     {
         $sourceQualifiers     = $this->source ? $this->source->getStringQualifiers() : [];
         $sourceTransformation = $this->source ? $this->source->getTransformation() : null;
-        $positionQualifiers   = $this->position ? $this->position->getStringQualifiers() : [];
         $additionalQualifiers = $this->getStringQualifiers();
 
         $additionalQualifiers [] = Flag::layerApply();
@@ -108,7 +90,7 @@ abstract class BaseSourceContainer extends BaseAction
         return [
             'source'         => $sourceQualifiers,
             'transformation' => $sourceTransformation,
-            'additional'     => ArrayUtils::mergeNonEmpty($positionQualifiers, $additionalQualifiers),
+            'additional'     => $additionalQualifiers,
         ];
     }
 
@@ -131,13 +113,11 @@ abstract class BaseSourceContainer extends BaseAction
     /**
      * Serializes to json.
      *
-     * @return mixed
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         return [
             'source'   => $this->source,
-            'position' => $this->position,
         ];
     }
 }

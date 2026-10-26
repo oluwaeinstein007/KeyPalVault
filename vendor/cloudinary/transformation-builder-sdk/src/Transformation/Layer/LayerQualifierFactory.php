@@ -24,15 +24,13 @@ class LayerQualifierFactory
      *
      * Overlay properties can come as array or as string.
      *
-     * @param string|array $layerQualifiers
      * @param string       $layerStackPosition Supported values: LayerStackPosition::OVERLAY,
      *                                         LayerStackPosition::UNDERLAY
      *
-     * @return BaseSourceQualifier
      *
      * @see LayerStackPosition::OVERLAY
      */
-    public static function fromParams($layerQualifiers, $layerStackPosition = LayerStackPosition::OVERLAY)
+    public static function fromParams(array|string $layerQualifiers, string $layerStackPosition = LayerStackPosition::OVERLAY): BaseSourceQualifier
     {
         return self::handleQualifierValue($layerQualifiers)->setStackPosition($layerStackPosition);
     }
@@ -40,20 +38,20 @@ class LayerQualifierFactory
     /**
      * Handles layer qualifier value.
      *
-     * @param string|array $layerQualifiers The layer qualifiers.
+     * @param array|string $layerQualifiers The layer qualifiers.
      *
-     * @return BaseSourceQualifier
      */
-    protected static function handleQualifierValue($layerQualifiers)
+    protected static function handleQualifierValue(array|string $layerQualifiers): FetchSourceQualifier|ImageSourceQualifier|BaseSourceQualifier|LutSourceQualifier|VideoSourceQualifier|SubtitlesSourceQualifier
     {
         // Handle layer params
         if (is_array($layerQualifiers)) {
             $resourceType = ArrayUtils::get($layerQualifiers, 'resource_type');
+            $deliveryType = ArrayUtils::get($layerQualifiers, 'type');
 
             // Fetch layer
-            $fetch = ArrayUtils::get($layerQualifiers, 'fetch');
-            if (! empty($fetch) || $resourceType === 'fetch') {
-                return new FetchSourceQualifier($fetch);
+            $fetchUrl = ArrayUtils::get($layerQualifiers, 'fetch', ArrayUtils::get($layerQualifiers, 'url'));
+            if (! empty($fetchUrl) || $deliveryType === 'fetch') {
+                return (new FetchSourceQualifier($fetchUrl))->assetType($resourceType);
             }
 
             $text     = ArrayUtils::get($layerQualifiers, 'text');
@@ -100,9 +98,9 @@ class LayerQualifierFactory
             if ($resourceType !== 'image') {
                 $components[] = $resourceType;
             }
-            $type = ArrayUtils::get($layerQualifiers, 'type');
-            if ($type !== 'upload') {
-                $components[] = $type;
+
+            if ($deliveryType !== 'upload') {
+                $components[] = $deliveryType;
             }
             $components[] = $publicId;
 
@@ -110,7 +108,7 @@ class LayerQualifierFactory
             $layerQualifiers = ArrayUtils::implodeQualifierValues(...$components);
         } elseif (is_string($layerQualifiers)) {
             // Handle fetch layer from string definition.
-            if (StringUtils::startsWith($layerQualifiers, 'fetch:')) {
+            if (StringUtils::contains($layerQualifiers, 'fetch:')) {
                 return new FetchSourceQualifier($layerQualifiers);
             }
         }

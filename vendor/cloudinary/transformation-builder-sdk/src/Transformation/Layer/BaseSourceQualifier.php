@@ -21,28 +21,32 @@ class BaseSourceQualifier extends BaseQualifier
     /**
      * @var string $name The name of the source qualifier.
      */
-    protected static $name = 'source';
+    protected static string $name = 'source';
 
     /**
      * @var string $sourceType The type of the source.
      */
-    protected $sourceType;
+    protected string $sourceType;
+
+    /**
+     * @var ?string $assetType The type of the asset.
+     */
+    protected ?string $assetType;
 
     /**
      * @var string The stack position of the layer.
      */
-    protected $stackPosition = LayerStackPosition::OVERLAY;
+    protected string $stackPosition = LayerStackPosition::OVERLAY;
 
     /**
      * Gets the source key.
      *
      * Key depends on the stack position.
      *
-     * @return string
      *
      * @internal
      */
-    public function getSourceKey()
+    public function getSourceKey(): string
     {
         if ($this->stackPosition === LayerStackPosition::UNDERLAY) {
             return 'u';
@@ -56,7 +60,7 @@ class BaseSourceQualifier extends BaseQualifier
      *
      * @return string Component name.
      */
-    public function getFullName()
+    public function getFullName(): string
     {
         return ArrayUtils::implodeFiltered('_', [parent::getFullName(), $this->stackPosition]);
     }
@@ -68,9 +72,23 @@ class BaseSourceQualifier extends BaseQualifier
      *
      * @return $this
      */
-    public function setStackPosition($stackPosition)
+    public function setStackPosition(string $stackPosition): static
     {
         $this->stackPosition = $stackPosition;
+
+        return $this;
+    }
+
+    /**
+     * Sets the asset type.
+     *
+     * @param ?string $assetType The type of the asset.
+     *
+     * @return $this
+     */
+    public function assetType(?string $assetType): static
+    {
+        $this->assetType = $assetType;
 
         return $this;
     }
@@ -82,8 +100,9 @@ class BaseSourceQualifier extends BaseQualifier
      */
     public function __toString()
     {
-        $sourceTypeStr = $this->sourceType ? "$this->sourceType:" : '';
+        $sourceTypeStr = isset($this->sourceType) && $this->sourceType ? "$this->sourceType:" : '';
+        $assetTypeStr  = isset($this->assetType) && $this->assetType && $this->assetType != "image" ? "$this->assetType:" : '';
 
-        return empty((string)$this->value) ? '' : "{$this->getSourceKey()}_{$sourceTypeStr}{$this->value}";
+        return empty((string)$this->value) ? '' : "{$this->getSourceKey()}_$assetTypeStr$sourceTypeStr$this->value";
     }
 }

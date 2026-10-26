@@ -7,7 +7,7 @@ use App\Models\Team;
 use App\Models\User;
 use App\Models\Vault;
 use Illuminate\Http\Request;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Cloudinary\Cloudinary;
 
 class VaultController extends Controller
 {
@@ -49,7 +49,7 @@ class VaultController extends Controller
 
 
     public function handleUpload($uploadedFile){
-        $result = Cloudinary::upload($uploadedFile, [
+        $result = app(Cloudinary::class)->uploadApi()->upload($uploadedFile, [
             'resource_type' => 'auto', // Auto-detect resource type (PDF in this case)
             'folder' => 'pdfs/', // Optional: Specify a folder in Cloudinary to store the PDF files
             'access_mode' => 'public', // Set the access mode to public
@@ -58,7 +58,7 @@ class VaultController extends Controller
         ]);
 
         // Get the public URL of the uploaded file from the Cloudinary response
-        $fileUrl = $result->getSecurePath();
+        $fileUrl = $result['secure_url'];
 
         $value = ['docLink' => $fileUrl, JSON_PRETTY_PRINT];
         return $value;

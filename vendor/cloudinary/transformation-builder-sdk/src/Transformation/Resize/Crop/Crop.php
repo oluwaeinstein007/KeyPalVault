@@ -24,15 +24,21 @@ class Crop extends BaseResizeAction
     /**
      * Crop constructor.
      *
-     * @param      $cropMode
-     * @param null $width
-     * @param null $height
-     * @param null $gravity
-     * @param null $x
-     * @param null $y
+     * @param string|CropMode $cropMode
+     * @param mixed           $width
+     * @param mixed           $height
+     * @param mixed           $gravity
+     * @param mixed           $x
+     * @param mixed           $y
      */
-    public function __construct($cropMode, $width = null, $height = null, $gravity = null, $x = null, $y = null)
-    {
+    public function __construct(
+        string|CropMode $cropMode,
+        mixed $width = null,
+        mixed $height = null,
+        mixed $gravity = null,
+        mixed $x = null,
+        mixed $y = null
+    ) {
         parent::__construct($cropMode, $width, $height);
 
         $this->gravity($gravity);
@@ -42,13 +48,11 @@ class Crop extends BaseResizeAction
     /**
      * Internal setter for the point value.
      *
-     * @param $value
      *
-     * @return static
      *
      * @internal
      */
-    public function setPointValue($value)
+    public function setPointValue($value): static
     {
         if (! isset($this->qualifiers[AbsolutePosition::getName()])) {
             $this->addQualifier(Position::absolute());

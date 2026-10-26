@@ -13,10 +13,10 @@ namespace Cloudinary\Transformation;
 use Cloudinary\ClassUtils;
 
 /**
- * Defines how to manipulate a video layer.
+ * Defines how to modify a video layer.
  *
  * **Learn more**: <a
- * href="https://cloudinary.com/documentation/video_manipulation_and_delivery#adding_video_overlays" target="_blank">
+ * href="https://cloudinary.com/documentation/video_layers#video_overlays" target="_blank">
  * Video overlays</a>
  *
  * @api
@@ -25,12 +25,12 @@ class VideoSource extends AssetBasedSource
 {
     use VideoTransformationTrait;
     use VideoSourceTrait;
+    use AudioSourceTrait;
     use ImageSourceTrait;
 
     /**
      * VideoLayer constructor.
      *
-     * @param $source
      */
     public function __construct($source)
     {
@@ -42,11 +42,10 @@ class VideoSource extends AssetBasedSource
      *
      * Creates a new VideoTransformation if not initialized.
      *
-     * @return VideoTransformation
      *
      * @internal
      */
-    public function getTransformation()
+    public function getTransformation(): VideoTransformation
     {
         if (! isset($this->transformation)) {
             $this->transformation = new VideoTransformation();
@@ -58,11 +57,10 @@ class VideoSource extends AssetBasedSource
     /**
      * Getter for the layer qualifier.
      *
-     * @return VideoSourceQualifier
      *
      * @internal
      */
-    protected function getSourceQualifier()
+    protected function getSourceQualifier(): VideoSourceQualifier|BaseSourceQualifier
     {
         if (! isset($this->qualifiers['source'])) {
             $this->qualifiers['source'] = new VideoSourceQualifier(null);

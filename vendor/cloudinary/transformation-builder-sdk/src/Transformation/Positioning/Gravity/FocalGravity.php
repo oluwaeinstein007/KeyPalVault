@@ -14,7 +14,7 @@ namespace Cloudinary\Transformation;
  * Defines the area to keep when automatically resizing an image.
  *
  * **Learn more**: <a
- * href=https://cloudinary.com/documentation/image_transformations#adjusting_the_automatic_gravity_focal_preference
+ * href=https://cloudinary.com/documentation/resizing_and_cropping#adjusting_the_automatic_gravity_focal_preference
  * target="_blank">Focal gravity</a>
  *
  * @api
@@ -28,7 +28,6 @@ class FocalGravity extends GravityQualifier implements FocalGravityInterface
     /**
      * FocalGravity constructor.
      *
-     * @param       $focalGravity
      * @param array $fallBacks
      */
     public function __construct($focalGravity, ...$fallBacks)
@@ -41,14 +40,13 @@ class FocalGravity extends GravityQualifier implements FocalGravityInterface
     /**
      * Sets the gravity.
      *
-     * @param FocalGravity|string $focalGravity The gravity.
+     * @param string|FocalGravity $focalGravity The gravity.
      * @param array               $fallBacks    Fallback gravities.
      *
-     * @return FocalGravity
      *
      * @internal
      */
-    protected function setGravity($focalGravity, ...$fallBacks)
+    protected function setGravity(string|FocalGravity $focalGravity, ...$fallBacks): static
     {
         $this->setQualifierValue($focalGravity, ...$fallBacks);
 
@@ -60,11 +58,10 @@ class FocalGravity extends GravityQualifier implements FocalGravityInterface
      *
      * @param array $fallBacks The fallback gravities.
      *
-     * @return FocalGravity
      *
      * @internal
      */
-    protected function addFallBacks(...$fallBacks)
+    protected function addFallBacks(...$fallBacks): static
     {
         $this->value->addValues(...$fallBacks);
 

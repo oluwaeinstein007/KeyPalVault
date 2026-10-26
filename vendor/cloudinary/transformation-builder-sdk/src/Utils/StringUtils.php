@@ -17,7 +17,17 @@ namespace Cloudinary;
  */
 class StringUtils
 {
-    const MAX_STRING_LENGTH = 255;
+    public const MAX_STRING_LENGTH = 255;
+
+    /**
+     * @var array<string, string>
+     */
+    private static array $camelToSnakeCache = [];
+
+    /**
+     * @var array<string, string>
+     */
+    private static array $snakeToCamelCache = [];
 
     /**
      * Converts camelCase to snake_case.
@@ -25,11 +35,21 @@ class StringUtils
      * @param string $input     The input string.
      * @param string $separator Optional custom separator.
      *
-     * @return string
      */
-    public static function camelCaseToSnakeCase($input, $separator = '_')
+    public static function camelCaseToSnakeCase(string $input, string $separator = '_'): string
     {
-        return strtolower(preg_replace('/(?<!^)[A-Z]/', $separator . '$0', $input));
+        $cacheKey = $separator === '_' ? $input : $input . "\0" . $separator;
+        if (isset(self::$camelToSnakeCache[$cacheKey])) {
+            return self::$camelToSnakeCache[$cacheKey];
+        }
+
+        $val = preg_replace('/(?<!^)[A-Z]/', $separator . '$0', $input);
+
+        if ($val === null) {
+            return self::$camelToSnakeCache[$cacheKey] = $input;
+        }
+
+        return self::$camelToSnakeCache[$cacheKey] = strtolower($val);
     }
 
     /**
@@ -38,11 +58,17 @@ class StringUtils
      * @param string $input     The input string.
      * @param string $separator Optional custom separator.
      *
-     * @return string
      */
-    public static function snakeCaseToCamelCase($input, $separator = '_')
+    public static function snakeCaseToCamelCase(string $input, string $separator = '_'): string
     {
-        return lcfirst(str_replace($separator, '', ucwords($input, $separator)));
+        $cacheKey = $separator === '_' ? $input : $input . "\0" . $separator;
+        if (isset(self::$snakeToCamelCache[$cacheKey])) {
+            return self::$snakeToCamelCache[$cacheKey];
+        }
+
+        return self::$snakeToCamelCache[$cacheKey] = lcfirst(
+            str_replace($separator, '', ucwords($input, $separator))
+        );
     }
 
     /**
@@ -50,18 +76,19 @@ class StringUtils
      *
      * Example: my_input_string -> mis; color_space -> cs;
      *
-     * @param string $input      The input string.
-     * @param array  $exclusions The list of words to omit from acronym. Useful for internal names.
-     * @param string $delimiter  The delimiter between words.
+     * @param string           $input      The input string.
+     * @param array            $exclusions The list of words to omit from acronym. Useful for internal names.
+     * @param non-empty-string $delimiter  The delimiter between words.
      *
-     * @return string
      */
-    public static function toAcronym($input, $exclusions = [], $delimiter = '_')
+    public static function toAcronym(string $input, array $exclusions = [], string $delimiter = '_'): string
     {
         $acronym = '';
-
-        foreach (ArrayUtils::safeFilter(ArrayUtils::blacklist(explode($delimiter, $input), $exclusions)) as $word) {
-            $acronym .= $word[0];
+        $parts = ArrayUtils::safeFilter(ArrayUtils::blacklist(explode($delimiter, $input), $exclusions));
+        if (! empty($parts)) {
+            foreach ($parts as $word) {
+                $acronym .= $word[0];
+            }
         }
 
         return $acronym;
@@ -70,36 +97,25 @@ class StringUtils
     /**
      * Determines whether $haystack starts with $needle.
      *
-     * @param string $haystack The string to search in.
-     * @param string $needle   The string to search for.
+     * @param ?string $haystack The string to search in.
+     * @param ?string $needle   The string to search for.
      *
-     * @return bool
      */
-    public static function startsWith($haystack, $needle)
+    public static function startsWith(?string $haystack, ?string $needle): bool
     {
-        if (empty($haystack)) {
-            return false;
-        }
-
-        return strpos($haystack, $needle) === 0;
+        return str_starts_with($haystack ?? '', $needle ?? '');
     }
 
     /**
      * Determines whether $haystack ends with $needle.
      *
-     * @param string $haystack The string to search in.
-     * @param string $needle   The string to search for.
+     * @param ?string $haystack The string to search in.
+     * @param ?string $needle   The string to search for.
      *
-     * @return bool
      */
-    public static function endsWith($haystack, $needle)
+    public static function endsWith(?string $haystack, ?string $needle): bool
     {
-        $length = strlen($needle);
-        if ($length === 0) {
-            return true;
-        }
-
-        return (substr($haystack, -$length) === $needle);
+        return str_ends_with($haystack ?? '', $needle ?? '');
     }
 
     /**
@@ -108,9 +124,8 @@ class StringUtils
      * @param string $string The input string.
      * @param string $char   The wrapping character(s).
      *
-     * @return string
      */
-    public static function ensureWrappedWith($string, $char)
+    public static function ensureWrappedWith(string $string, string $char): string
     {
         if (! self::startsWith($string, $char)) {
             $string = $char . $string;
@@ -126,31 +141,30 @@ class StringUtils
     /**
      * Determines whether $haystack contains $needle.
      *
-     * @param string $haystack The string to search in.
-     * @param string $needle   The string to search for.
+     * @param ?string $haystack The string to search in.
+     * @param string  $needle   The string to search for.
      *
-     * @return bool
      */
-    public static function contains($haystack, $needle)
+    public static function contains(?string $haystack, string $needle): bool
     {
         if (empty($haystack)) {
             return false;
         }
 
-        return strpos($haystack, $needle) !== false;
+        return str_contains($haystack, $needle);
     }
 
     /**
      * Truncates prefix from the string.
      *
-     * @param string $string The input string.
-     * @param string $prefix Prefix to truncate.
+     * @param ?string $string The input string.
+     * @param string  $prefix Prefix to truncate.
      *
-     * @return string The resulting string.
+     * @return ?string The resulting string.
      */
-    public static function truncatePrefix($string, $prefix)
+    public static function truncatePrefix(?string $string, string $prefix): ?string
     {
-        if (self::startsWith($string, $prefix)) {
+        if (is_string($string) && self::startsWith($string, $prefix)) {
             return substr($string, strlen($prefix));
         }
 
@@ -166,20 +180,21 @@ class StringUtils
      *
      * @param string $string    The input string.
      * @param int    $maxLength Maximum string length.
-     * @param string $glue
      *
-     * @return string
      */
-    public static function truncateMiddle($string, $maxLength = self::MAX_STRING_LENGTH, $glue = '...')
-    {
+    public static function truncateMiddle(
+        string $string,
+        int $maxLength = self::MAX_STRING_LENGTH,
+        string $glue = '...'
+    ): string {
         // Early exit if no truncation necessary
         if (strlen($string) <= $maxLength) {
             return $string;
         }
 
-        $numRightChars = ceil($maxLength / 2);
+        $numRightChars = (int)ceil($maxLength / 2);
 
-        $numLeftChars = floor($maxLength / 2);
+        $numLeftChars = (int)floor($maxLength / 2);
         $glue         = substr($glue, 0, $numLeftChars); // Pathological case, when glue is longer than a half
         $numLeftChars -= strlen($glue);
 
@@ -192,9 +207,8 @@ class StringUtils
      * @param string $string The string to search in.
      * @param string $prefix The string to search for.
      *
-     * @return string
      */
-    public static function ensureStartsWith($string, $prefix)
+    public static function ensureStartsWith(string $string, string $prefix): string
     {
         if (! self::startsWith($string, $prefix)) {
             return $prefix . $string;
@@ -210,7 +224,7 @@ class StringUtils
      *
      * @return string Resulting string.
      */
-    public static function smartEscape($str)
+    public static function smartEscape(string $str): string
     {
         $revert = ['%3A' => ':', '%2F' => '/'];
 
@@ -224,7 +238,7 @@ class StringUtils
      *
      * @return string|string[]|null
      */
-    public static function encodeDot($string)
+    public static function encodeDot(string $string): array|string|null
     {
         return str_replace('.', '%2E', $string);
     }
@@ -233,11 +247,10 @@ class StringUtils
      * Escapes characters.
      *
      * @param string       $string      The input string.
-     * @param string|array $unsafeChars The list of the characters to escape.
+     * @param array|string $unsafeChars The list of the characters to escape.
      *
-     * @return string|string[]|null
      */
-    public static function escapeUnsafeChars($string, $unsafeChars)
+    public static function escapeUnsafeChars(string $string, array|string $unsafeChars): string|null
     {
         if (empty($unsafeChars)) {
             return $string;
@@ -261,7 +274,7 @@ class StringUtils
      *
      * @internal
      */
-    public static function base64UrlEncode($data)
+    public static function base64UrlEncode(mixed $data): string
     {
         return strtr(base64_encode($data), '+/', '-_');
     }
@@ -269,13 +282,13 @@ class StringUtils
     /**
      * Wrapper around parse_str, returns query parameters.
      *
-     * @param string $query The query string.
+     * @param ?string $query The query string.
      *
      * @return array Query parameters.
      *
      * @see parse_str
      */
-    public static function parseQueryString($query)
+    public static function parseQueryString(?string $query): array
     {
         $params = [];
         if (! empty($query)) {
